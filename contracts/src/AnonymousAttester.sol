@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./PoseidonHasher.sol";
 import "./Schema.sol";
+import "./Verifier.sol";
 
 struct AttestationProof {
     bytes proof;
@@ -15,6 +16,7 @@ struct AttestationProof {
 
 contract AnonymousAttester is Ownable {
     IEAS public immutable eas;
+    BaseUltraVerifier public verifier;
 
     bytes32[2] public curiaPubkey;
 
@@ -29,10 +31,12 @@ contract AnonymousAttester is Ownable {
     error InvalidRevoker();
     error InvalidSchema();
     error NonceUsed();
+    error InvalidProof();
 
     event SchemaAdded(bytes32 indexed schema);
     event SchemaRemoved(bytes32 indexed schema);
     event PubkeyChanged(bytes32[2] indexed pubkey);
+    event VerifierChanged(address indexed verifier);
 
     constructor(IEAS _eas) Ownable(msg.sender) {
         eas = _eas;
@@ -41,6 +45,11 @@ contract AnonymousAttester is Ownable {
     function changePubkey(bytes32[2] calldata pubkey) external onlyOwner {
         curiaPubkey = pubkey;
         emit PubkeyChanged(pubkey);
+    }
+
+    function changeVerifier(BaseUltraVerifier _verifier) external onlyOwner {
+        verifier = _verifier;
+        emit VerifierChanged(address(_verifier));
     }
 
     function addSchema(bytes32 schema) external onlyOwner {
@@ -66,6 +75,19 @@ contract AnonymousAttester is Ownable {
 
         if (nonce[proof.nonce]) {
             revert NonceUsed();
+        }
+
+        bytes32[] memory inputs = new bytes32[](6);
+        inputs[0] = curiaPubkey[0];
+        inputs[1] = curiaPubkey[1];
+        inputs[2] = bytes32(role);
+        inputs[3] = keccak256(abi.encodePacked(message));
+        inputs[4] = proof.nonce;
+        inputs[5] = proof.revokerHash;
+        bool isVerified = verifier.verify(proof.proof, inputs);
+
+        if (!isVerified) {
+            revert InvalidProof();
         }
 
         bytes32 uid = eas.attest(
