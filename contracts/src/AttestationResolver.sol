@@ -16,12 +16,18 @@ contract AttestationResolver is SchemaResolver, Ownable {
 
     error InvalidRole();
 
+    event AuthoriedAttesterAdded(address indexed attester);
+    event AuthoriedAttesterRemoved(address indexed attester);
+    event CustomResolverSet(uint256 indexed role, ICustomResolver resolver);
+
     function addAuthorizedAttester(address attester) external onlyOwner {
         authorizedAttesters[attester] = true;
+        emit AuthoriedAttesterAdded(attester);
     }
 
     function removeAuthorizedAttester(address attester) external onlyOwner {
         authorizedAttesters[attester] = false;
+        emit AuthoriedAttesterRemoved(attester);
     }
 
     function setCustomResolver(
@@ -29,6 +35,7 @@ contract AttestationResolver is SchemaResolver, Ownable {
         ICustomResolver resolver
     ) external onlyOwner {
         customResolvers[role] = resolver;
+        emit CustomResolverSet(role, resolver);
     }
 
     function onAttest(
@@ -36,6 +43,11 @@ contract AttestationResolver is SchemaResolver, Ownable {
         uint256
     ) internal virtual override returns (bool) {
         Schema memory schema = abi.decode(attestation.data, (Schema));
+
+        // Check if role is 0 -> no role is shown
+        if (schema.role == 0) {
+            return true;
+        }
 
         // Check if the attester is authorized -> short circuit
         if (authorizedAttesters[attestation.attester]) {
