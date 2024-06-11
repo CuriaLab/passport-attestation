@@ -1,0 +1,14 @@
+address = ""
+msg = ""
+nonce = ""
+revoker_hash = ""
+role = ""
+sig_s = ""
+
+[pubkey]
+x = ""
+y = ""
+
+[sig_r]
+x = ""
+y = ""

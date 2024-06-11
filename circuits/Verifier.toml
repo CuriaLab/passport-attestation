@@ -1,0 +1,8 @@
+msg = ""
+nonce = ""
+revoker_hash = ""
+role = ""
+
+[pubkey]
+x = ""
+y = ""
