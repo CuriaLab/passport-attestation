@@ -16,6 +16,8 @@ struct AttestationProof {
 contract AnonymousAttester is Ownable {
     IEAS public immutable eas;
 
+    bytes32[2] public curiaPubkey;
+
     // attestation uid -> revoker hash;
     mapping(bytes32 => bytes32) revokers;
     // schema -> allowed
@@ -30,9 +32,15 @@ contract AnonymousAttester is Ownable {
 
     event SchemaAdded(bytes32 indexed schema);
     event SchemaRemoved(bytes32 indexed schema);
+    event PubkeyChanged(bytes32[2] indexed pubkey);
 
     constructor(IEAS _eas) Ownable(msg.sender) {
         eas = _eas;
+    }
+
+    function changePubkey(bytes32[2] calldata pubkey) external onlyOwner {
+        curiaPubkey = pubkey;
+        emit PubkeyChanged(pubkey);
     }
 
     function addSchema(bytes32 schema) external onlyOwner {
