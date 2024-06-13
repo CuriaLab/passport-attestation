@@ -8,5 +8,9 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.86"
 ark-bn254 = { version = "0.4.0", features = ["std", "scalar_field"], default-features = false }
-ark-ff = { version = "0.4.2", features = ["parallel", "std"] }
+ark-ec = { version = "0.4.2", default-features = false, features = ["parallel", "std"] }
+ark-ed-on-bn254 = { version = "0.4.0", features = ["std"], default-features = false }
+ark-ff = { version = "0.4.2", features = ["parallel", "std"], default-features = false }
+ark-std = { version = "0.4.0", default-features = false, features = ["parallel", "std"] }
+hex = "0.4.3"
 light-poseidon = { git = "https://github.com/Lightprotocol/light-poseidon.git", version = "0.2.0" }
