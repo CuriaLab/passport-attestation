@@ -60,7 +60,7 @@ contract AttestationResolver is SchemaResolver, Ownable {
             revert InvalidRole();
         }
 
-        return resolver.check(attestation.attester);
+        return resolver.check(attestation.attester, schema.ref);
     }
 
     function onRevoke(

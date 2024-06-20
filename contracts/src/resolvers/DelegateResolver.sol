@@ -8,7 +8,10 @@ contract DelegateResolver is ICustomResolver {
     ERC20Votes immutable opToken =
         ERC20Votes(0x4200000000000000000000000000000000000042);
 
-    function check(address addr) external view override returns (bool) {
+    function check(
+        address addr,
+        bytes calldata
+    ) external view override returns (bool) {
         return opToken.getVotes(addr) > 0;
     }
 }

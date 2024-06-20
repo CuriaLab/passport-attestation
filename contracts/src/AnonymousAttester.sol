@@ -99,7 +99,9 @@ contract AnonymousAttester is Ownable {
                     revocable: true,
                     refUID: 0x0,
                     value: 0,
-                    data: abi.encode(Schema({role: role, message: message}))
+                    data: abi.encode(
+                        Schema({role: role, message: message, ref: ""})
+                    )
                 })
             })
         );

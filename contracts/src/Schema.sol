@@ -5,4 +5,5 @@ pragma solidity ^0.8.26;
 struct Schema {
     uint256 role;
     string message;
+    bytes ref;
 }
