@@ -89,7 +89,7 @@ contract AnonymousAttester is Ownable {
         inputs[2] = bytes32(role);
         inputs[3] = bytes32(
             uint256(keccak256(bytes(message))) %
-                16798108731015832284940804142231733909759579603404752749028378864165570215949
+                21888242871839275222246405745257275088548364400416034343698204186575808495617
         );
         inputs[4] = proof.nonce;
         inputs[5] = proof.revokerHash;
