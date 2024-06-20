@@ -136,7 +136,7 @@ contract AnonymousAttester is Ownable {
             revert RevokerNotFound();
         }
 
-        bytes32 calculatedRevokerHash = PoseidonHasher.hash([uid, revoker]);
+        bytes32 calculatedRevokerHash = PoseidonHasher.hash([revoker, revoker]);
 
         if (calculatedRevokerHash != revokerHash) {
             revert InvalidRevoker();
