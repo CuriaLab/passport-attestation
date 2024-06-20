@@ -12,6 +12,7 @@ struct AttestationProof {
     bytes proof;
     bytes32 revokerHash;
     bytes32 nonce;
+    bytes32 timestamp;
 }
 
 contract AnonymousAttester is Ownable {
@@ -84,6 +85,7 @@ contract AnonymousAttester is Ownable {
         inputs[3] = keccak256(abi.encodePacked(message));
         inputs[4] = proof.nonce;
         inputs[5] = proof.revokerHash;
+        inputs[6] = proof.timestamp;
         bool isVerified = verifier.verify(proof.proof, inputs);
 
         if (!isVerified) {
@@ -100,7 +102,11 @@ contract AnonymousAttester is Ownable {
                     refUID: 0x0,
                     value: 0,
                     data: abi.encode(
-                        Schema({role: role, message: message, ref: ""})
+                        Schema({
+                            role: role,
+                            message: message,
+                            ref: bytes.concat(proof.timestamp)
+                        })
                     )
                 })
             })
