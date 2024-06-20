@@ -70,7 +70,7 @@ contract AnonymousAttester is Ownable {
         uint256 role,
         string calldata message,
         AttestationProof calldata proof
-    ) external {
+    ) external returns (bytes32) {
         if (address(verifier) == address(0x0)) {
             revert InvalidVerifier();
         }
@@ -83,11 +83,14 @@ contract AnonymousAttester is Ownable {
             revert NonceUsed();
         }
 
-        bytes32[] memory inputs = new bytes32[](6);
+        bytes32[] memory inputs = new bytes32[](7);
         inputs[0] = curiaPubkey[0];
         inputs[1] = curiaPubkey[1];
         inputs[2] = bytes32(role);
-        inputs[3] = keccak256(abi.encodePacked(message));
+        inputs[3] = bytes32(
+            uint256(keccak256(bytes(message))) %
+                16798108731015832284940804142231733909759579603404752749028378864165570215949
+        );
         inputs[4] = proof.nonce;
         inputs[5] = proof.revokerHash;
         inputs[6] = proof.timestamp;
@@ -118,6 +121,8 @@ contract AnonymousAttester is Ownable {
         );
         nonce[proof.nonce] = true;
         revokers[uid] = proof.revokerHash;
+
+        return uid;
     }
 
     function revoke(bytes32 schema, bytes32 uid, bytes32 revoker) external {
