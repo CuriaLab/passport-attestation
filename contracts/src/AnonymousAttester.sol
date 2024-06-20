@@ -33,6 +33,7 @@ contract AnonymousAttester is Ownable {
     error InvalidSchema();
     error NonceUsed();
     error InvalidProof();
+    error InvalidVerifier();
 
     event SchemaAdded(bytes32 indexed schema);
     event SchemaRemoved(bytes32 indexed schema);
@@ -70,6 +71,10 @@ contract AnonymousAttester is Ownable {
         string calldata message,
         AttestationProof calldata proof
     ) external {
+        if (address(verifier) == address(0x0)) {
+            revert InvalidVerifier();
+        }
+
         if (!schemas[schema]) {
             revert InvalidSchema();
         }
