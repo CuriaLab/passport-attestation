@@ -12,6 +12,8 @@ contract DelegatorResolver is ICustomResolver {
         address addr,
         bytes calldata
     ) external view override returns (bool) {
-        return opToken.delegates(addr) != address(0);
+        return
+            opToken.delegates(addr) != address(0) &&
+            opToken.balanceOf(addr) > 0;
     }
 }

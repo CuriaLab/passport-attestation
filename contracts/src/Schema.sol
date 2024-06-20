@@ -7,3 +7,5 @@ struct Schema {
     string message;
     bytes ref;
 }
+
+string constant SCHEMA_STRING = "uint256 role, string message, bytes ref";
