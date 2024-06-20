@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 
 import "./ICustomResolver.sol";
 
-contract DelegateResolver is ICustomResolver, Ownable {
+contract BadgeholderResolver is ICustomResolver, Ownable {
     IEAS immutable eas;
     uint256 public currentRound;
     mapping(address => bool) public approvedAttesters;
