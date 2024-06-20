@@ -8,15 +8,17 @@ fn main(
     role: pub Field,
     msg: pub Field,
     nonce: pub Field,
-    revoker_hash: pub Field
+    revoker_hash: pub Field,
+    timestamp: pub Field
 ) {
-    let message = poseidon::bn254::hash_2([address, role]);
+    let message = poseidon::bn254::hash_3([address, role, timestamp]);
     let is_valid = eddsa_poseidon_verify(pubkey.x, pubkey.y, sig_s, sig_r.x, sig_r.y, message);
 
     assert(is_valid, "Signature is invalid");
 
     let _ = msg * msg;
     let _ = nonce * nonce;
+    let _ = timestamp * timestamp;
     let revoker = poseidon::bn254::hash_3([message, sig_s, msg]);
     let calculated_revoker_hash = poseidon::bn254::hash_2([revoker, revoker]);
 
@@ -43,10 +45,10 @@ fn test_poseidon_verify() {
 fn test_main() {
     main(
         57005, // 0x000000000000000000000000000000000000dEaD
-        2715862940116267382606240290562142862554730010461021171639782053111288555584,
+        1427860297441759022677808574306996626835089094313226040373638034714511660633,
         Point {
-        x: 21160895188234556385251066206232893446719334921280619196698457852449073267847,
-        y: 13281919814466829160187430471227137462820016191138267930502630392171119004847
+        x: 20427897995191784322958268816791911454025156511622737324617550098495648896371,
+        y: 13475945305366082258359349275262445747601356417482798206955229178435023280121
     },
         Point {
         x: 14362991499749677503784875617152783987369753795584406800566212563953275032114,
@@ -55,6 +57,7 @@ fn test_main() {
         1,
         5735816763073854953388147237921, // Hello, world!
         123456789,
-        14825076182851941341789579670639600290092328229210523127644560294925601544894
+        14041675743261546148041887336962757586381464911329133868108739484314530314422,
+        1718875852
     );
 }
