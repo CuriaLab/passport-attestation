@@ -43,6 +43,9 @@ contract AttestationTest is Test {
                 hex"0dd32faaef5273e1fe22189585be98493fd3d2c2c6e61728dda32ec5335f3ce3"
             ]
         );
+
+        // add anonymous attester to authorized attesters
+        resolver.addAuthorizedAttester(address(anonymousAttester));
     }
 
     function test_AnonymousAttestation() public {
