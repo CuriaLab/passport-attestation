@@ -61,6 +61,11 @@ contract BadgeholderResolver is ICustomResolver, Ownable {
             return false;
         }
 
+        // check if attestation is not revoked
+        if (attestation.revocationTime > 0) {
+            return false;
+        }
+
         (string memory round, , ) = abi.decode(
             attestation.data,
             (string, address, string)
