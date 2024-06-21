@@ -1,90 +1,20 @@
 use std::{collections::HashSet, sync::Arc};
 
 use alloy::{
-    dyn_abi::SolType,
-    hex::FromHex,
-    primitives::{address, Address, Bytes, Uint},
+    primitives::{address, Address, Uint},
     providers::HyperProvider,
-    sol,
 };
 use anyhow::Result;
 use reqwest::Client;
-use serde::{de::Error as DeError, Deserialize, Deserializer};
 use serde_json::{from_value, json, Value};
 use tokio::{sync::RwLock, try_join};
 
-sol! {
-    #[sol(rpc)]
-    contract OptimismToken {
-        function getVotes(address account) external view returns (uint256);
-        function delegates(address account) external view returns (address);
-        function balanceOf(address account) external view returns (uint256);
-    }
-    struct Schema {
-        string rpgfRound;
-        address referredBy;
-        string referredMethod;
-    }
-}
+pub mod attestation;
+pub use attestation::*;
+pub mod types;
+pub use types::*;
 
 const OPTIMISM_TOKEN_ADDRESS: Address = address!("4200000000000000000000000000000000000042");
-
-#[repr(u8)]
-pub enum Role {
-    None,
-    Badgeholder,
-    Delegate,
-    Delegator,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct BadgeholderAttestation {
-    pub recipient: Address,
-    #[serde(deserialize_with = "data_from_string")]
-    pub data: BadgeholderAttestationData,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct BadgeholderAttestationData {
-    pub rpgf_round: u64,
-    pub referred_by: Address,
-    pub referred_method: String,
-}
-
-fn data_from_string<'de, D>(deserializer: D) -> Result<BadgeholderAttestationData, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    String::deserialize(deserializer).and_then(|s| {
-        let schema = Schema::abi_decode_sequence(
-            &Bytes::from_hex(s).map_err(|_| DeError::custom("failed to decode hex"))?,
-            false,
-        )
-        .map_err(|e| DeError::custom(format!("failed to decode schema: {}", e)))?;
-        Result::Ok(BadgeholderAttestationData {
-            rpgf_round: schema
-                .rpgfRound
-                .parse()
-                .map_err(|_| DeError::custom("failed to parse rpgf_round"))?,
-            referred_by: schema.referredBy,
-            referred_method: schema.referredMethod,
-        })
-    })
-}
-
-impl BadgeholderAttestationData {
-    pub fn rpgf_round_mut(&mut self) -> &mut u64 {
-        &mut self.rpgf_round
-    }
-
-    pub fn referred_by_mut(&mut self) -> &mut Address {
-        &mut self.referred_by
-    }
-
-    pub fn referred_method_mut(&mut self) -> &mut String {
-        &mut self.referred_method
-    }
-}
 
 #[derive(Debug)]
 pub struct RoleQuerier {
@@ -161,25 +91,25 @@ impl RoleQuerier {
 
     pub async fn is_role(&self, address: Address, role: Role) -> Result<bool> {
         match role {
+            Role::Hidden => Ok(true),
             Role::Badgeholder => self.is_badgeholder(address).await,
             Role::Delegate => self.is_delegate(address).await,
             Role::Delegator => self.is_delegator(address).await,
-            _ => Ok(true),
         }
     }
 
-    pub async fn is_delegate(&self, address: Address) -> Result<bool> {
+    async fn is_delegate(&self, address: Address) -> Result<bool> {
         let contract = OptimismToken::new(OPTIMISM_TOKEN_ADDRESS, self.provider.clone());
         let votes = contract.getVotes(address).call().await?;
         Ok(votes._0 > Uint::ZERO)
     }
 
-    pub async fn is_badgeholder(&self, address: Address) -> Result<bool> {
+    async fn is_badgeholder(&self, address: Address) -> Result<bool> {
         let badgeholder_list = self.badgeholders.read().await;
         Ok(badgeholder_list.contains(&address))
     }
 
-    pub async fn is_delegator(&self, address: Address) -> Result<bool> {
+    async fn is_delegator(&self, address: Address) -> Result<bool> {
         let contract = OptimismToken::new(OPTIMISM_TOKEN_ADDRESS, self.provider.clone());
         let d = || async { contract.delegates(address).call().await };
         let b = || async { contract.balanceOf(address).call().await };
