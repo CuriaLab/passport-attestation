@@ -1,4 +1,5 @@
 use alloy::sol;
+use serde::{Deserialize, Serialize};
 
 sol! {
     #[sol(rpc)]
@@ -14,6 +15,7 @@ sol! {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[repr(u8)]
 pub enum Role {
     Hidden,

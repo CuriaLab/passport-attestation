@@ -2,23 +2,30 @@ use std::{collections::HashSet, sync::Arc};
 
 use alloy::{
     primitives::{address, Address, Uint},
-    providers::HyperProvider,
+    providers::ReqwestProvider,
 };
 use anyhow::Result;
 use reqwest::Client;
 use serde_json::{from_value, json, Value};
-use tokio::{sync::RwLock, try_join};
+use tokio::{
+    spawn,
+    sync::RwLock,
+    task::JoinHandle,
+    time::{interval, Duration},
+    try_join,
+};
 
 pub mod attestation;
 pub use attestation::*;
 pub mod types;
+use tracing::info;
 pub use types::*;
 
 const OPTIMISM_TOKEN_ADDRESS: Address = address!("4200000000000000000000000000000000000042");
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RoleQuerier {
-    pub provider: Arc<HyperProvider>,
+    pub provider: ReqwestProvider,
     pub badgeholders: Arc<RwLock<HashSet<Address>>>,
 }
 
@@ -82,11 +89,29 @@ impl RoleQuerier {
         Ok(badgeholders)
     }
 
-    pub async fn new(provider: Arc<HyperProvider>) -> Result<Self> {
-        Ok(RoleQuerier {
-            provider,
-            badgeholders: Arc::new(RwLock::new(Self::fetch_badgeholders().await?)),
-        })
+    /// Create a new RoleQuerier instance and poll for badgeholders every 60 seconds.
+    pub async fn new(provider: ReqwestProvider) -> Result<(Self, JoinHandle<()>)> {
+        let badgeholders = Arc::new(RwLock::new(Self::fetch_badgeholders().await?));
+        let b = badgeholders.clone();
+        let poller = spawn(async move {
+            let mut itv = interval(Duration::from_secs(60));
+            loop {
+                itv.tick().await;
+                if let Ok(new_badgeholders) = Self::fetch_badgeholders().await {
+                    info!("Updating badgeholders");
+                    let mut badgeholders = b.write().await;
+                    *badgeholders = new_badgeholders;
+                }
+            }
+        });
+
+        Ok((
+            RoleQuerier {
+                provider,
+                badgeholders,
+            },
+            poller,
+        ))
     }
 
     pub async fn is_role(&self, address: Address, role: Role) -> Result<bool> {

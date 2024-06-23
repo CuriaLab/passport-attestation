@@ -6,14 +6,17 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-alloy = { version = "0.1.2", features = ["provider-http", "contract", "std", "hyper"], default-features = false }
+alloy = { version = "0.1.2", features = ["provider-http", "contract", "std", "reqwest", "rpc-types-eth"], default-features = false }
 anyhow = "1.0.86"
 ark-bn254 = { version = "0.4.0", features = ["std", "scalar_field"], default-features = false }
 ark-ec = { version = "0.4.2", default-features = false, features = ["parallel", "std"] }
 ark-ed-on-bn254 = { version = "0.4.0", features = ["std"], default-features = false }
 ark-ff = { version = "0.4.2", features = ["parallel", "std"], default-features = false }
+ark-secp256k1 = { version = "0.4.0", features = ["std"], default-features = false }
 ark-std = { version = "0.4.0", default-features = false, features = ["parallel", "std"] }
 axum = "0.7.5"
+dotenvy = "0.15.7"
+futures = "0.3.30"
 hex = "0.4.3"
 hyper = "1.3.1"
 light-poseidon = { git = "https://github.com/Lightprotocol/light-poseidon.git", version = "0.2.0" }
@@ -22,3 +25,5 @@ serde = { version = "1.0.203", features = ["derive"] }
 serde_json = "1.0.117"
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
 tokio = { version = "1.38.0", features = ["full"] }
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"

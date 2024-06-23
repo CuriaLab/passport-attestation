@@ -1,8 +1,9 @@
-use anyhow::Result;
+use alloy::primitives::{keccak256, Address};
+use anyhow::{anyhow, bail, Result};
 use ark_bn254::Fr;
 use ark_ec::{AffineRepr, CurveGroup};
 use ark_ed_on_bn254::Fr as EdFr;
-use ark_ff::{BigInteger, PrimeField};
+use ark_ff::{BigInteger, Field, PrimeField};
 use light_poseidon::{Poseidon, PoseidonHasher};
 
 pub mod affine;
@@ -56,6 +57,59 @@ pub fn eddsa_verify(pk: EdAffine, message: Fr, sig_r: EdAffine, sig_s: EdFr) -> 
     let p2 = pk8 * h + sig_r;
     // p1 == p2
     Ok(p1 == p2)
+}
+
+pub fn eddsa_verify_message(
+    pk: EdAffine,
+    message: &[u8],
+    sig_r: EdAffine,
+    sig_s: EdFr,
+) -> Result<bool> {
+    let m = Fr::from_be_bytes_mod_order(keccak256(message).as_ref());
+    eddsa_verify(pk, m, sig_r, sig_s)
+}
+
+pub fn ecdsa_recover(
+    message: &[u8],
+    sig_r: ark_secp256k1::Fr,
+    sig_s: ark_secp256k1::Fr,
+    sig_v: u8,
+) -> Result<ark_secp256k1::Affine> {
+    let sig_v = match sig_v {
+        27 | 0 => 0,
+        28 | 1 => 1,
+        _ => bail!("Invalid sig_v value"),
+    };
+    let y = ark_secp256k1::Affine::get_point_from_x_unchecked(
+        convert::<ark_secp256k1::Fq>(&sig_r),
+        sig_v == 1,
+    )
+    .ok_or(anyhow!("Invalid r or v, cannot recover r point"))?;
+    let hashed_message = keccak256(
+        [
+            b"\x19Ethereum Signed Message:\n",
+            message.len().to_string().as_bytes(),
+            message,
+        ]
+        .concat(),
+    )
+    .to_vec();
+    let m = ark_secp256k1::Fr::from_be_bytes_mod_order(&hashed_message);
+    let rinv = sig_r.inverse().unwrap();
+    let u1 = -m * rinv;
+    let u2 = sig_s * rinv;
+    let q = (ark_secp256k1::Affine::generator() * u1 + y * u2).into_affine();
+    Ok(q)
+}
+
+pub fn pubkey_to_address(q: ark_secp256k1::Affine) -> Address {
+    let pk_bytes = [
+        q.x.into_bigint().to_bytes_be(),
+        q.y.into_bigint().to_bytes_be(),
+    ]
+    .concat();
+    let address = keccak256(&pk_bytes)[12..].to_vec();
+    Address::from_slice(&address)
 }
 
 #[cfg(test)]
