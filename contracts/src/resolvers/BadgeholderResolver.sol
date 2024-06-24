@@ -10,28 +10,24 @@ import "./ICustomResolver.sol";
 
 contract BadgeholderResolver is ICustomResolver, Ownable {
     IEAS immutable eas;
-    uint256 public currentRound;
-    mapping(address => bool) public approvedAttesters;
 
-    error InvalidAttestation();
-    error InvalidAddress();
+    mapping(address => bool) public approvedAttesters;
+    bytes32 public immutable schema;
+
+    uint256 public currentRound;
 
     event RoundChanged(uint256 round);
-    event AttesterAdded(address indexed attester);
-    event AttesterRemoved(address indexed attester);
 
-    constructor(IEAS _eas) Ownable(msg.sender) {
+    constructor(
+        IEAS _eas,
+        bytes32 _schema,
+        address[] memory _approved
+    ) Ownable(msg.sender) {
         eas = _eas;
-    }
-
-    function addApprovedAttester(address attester) external onlyOwner {
-        approvedAttesters[attester] = true;
-        emit AttesterAdded(attester);
-    }
-
-    function removeApprovedAttester(address attester) external onlyOwner {
-        approvedAttesters[attester] = false;
-        emit AttesterRemoved(attester);
+        schema = _schema;
+        for (uint256 i = 0; i < _approved.length; i++) {
+            approvedAttesters[_approved[i]] = true;
+        }
     }
 
     function changeRound(uint256 round) external onlyOwner {
@@ -48,6 +44,11 @@ contract BadgeholderResolver is ICustomResolver, Ownable {
 
         // check if attestation exists
         if (attestation.uid == 0x0) {
+            return false;
+        }
+
+        // check if attestation is for the schema
+        if (attestation.schema != schema) {
             return false;
         }
 

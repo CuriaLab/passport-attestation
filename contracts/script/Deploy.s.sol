@@ -31,14 +31,14 @@ contract DeployTestnet is Script {
         AttestationResolver resolver = new AttestationResolver(eas);
 
         // setup badgeholder resolver
-        BadgeholderResolver badgeholderResolver = new BadgeholderResolver(eas);
-        badgeholderResolver.addApprovedAttester(
-            0x621477dBA416E12df7FF0d48E14c4D20DC85D7D9
-        ); // op foundation 1
-        badgeholderResolver.addApprovedAttester(
-            0xE4553b743E74dA3424Ac51f8C1E586fd43aE226F
-        ); // op foundation 2
-        // set round to 4
+        address[] memory addresses = new address[](2);
+        addresses[0] = 0x621477dBA416E12df7FF0d48E14c4D20DC85D7D9; // op foundation 1
+        addresses[1] = 0xE4553b743E74dA3424Ac51f8C1E586fd43aE226F; // op foundation 2
+        BadgeholderResolver badgeholderResolver = new BadgeholderResolver(
+            eas,
+            0xfdcfdad2dbe7489e0ce56b260348b7f14e8365a8a325aef9834818c00d46b31b,
+            addresses
+        );
         badgeholderResolver.changeRound(4);
 
         // add badgeholder resolver to attestation resolver
