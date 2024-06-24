@@ -27,3 +27,9 @@ tiny-keccak = { version = "2.0.2", features = ["keccak"] }
 tokio = { version = "1.38.0", features = ["full"] }
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
+
+[profile.release]
+lto = true
+strip = true
+opt-level = 2
+panic = "abort"
