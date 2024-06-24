@@ -18,7 +18,7 @@ use tokio::{
 pub mod attestation;
 pub use attestation::*;
 pub mod types;
-use tracing::info;
+use tracing::{error, info};
 pub use types::*;
 
 const OPTIMISM_TOKEN_ADDRESS: Address = address!("4200000000000000000000000000000000000042");
@@ -96,10 +96,15 @@ impl RoleQuerier {
             let mut itv = interval(Duration::from_secs(60));
             loop {
                 itv.tick().await;
-                if let Ok(new_badgeholders) = Self::fetch_badgeholders().await {
-                    info!("Updating badgeholders");
-                    let mut badgeholders = b.write().await;
-                    *badgeholders = new_badgeholders;
+                match Self::fetch_badgeholders().await {
+                    Ok(new_badgeholders) => {
+                        info!("Updating badgeholders");
+                        let mut badgeholders = b.write().await;
+                        *badgeholders = new_badgeholders;
+                    }
+                    Err(e) => {
+                        error!("Failed to fetch badgeholders: {}", e);
+                    }
                 }
             }
         });

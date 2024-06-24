@@ -64,7 +64,13 @@ async fn main() -> Result<()> {
         .with_max_level(tracing::Level::DEBUG)
         .init();
 
-    info!("Starting server");
+    let port = var("PORT")
+        .ok()
+        .map(|p| p.parse().ok())
+        .flatten()
+        .unwrap_or(3010);
+
+    info!("Starting server in port {}", port);
     info!("Pubkey Registry at {}", pubkey_registry);
     info!(
         "Public Key: ({}, {})",
@@ -73,7 +79,7 @@ async fn main() -> Result<()> {
     );
     select! {
         _ = axum::serve(
-            TcpListener::bind(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 3010)).await?,
+            TcpListener::bind(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, port)).await?,
             app,
         ).into_future() => {}
         _ = poller => {}
