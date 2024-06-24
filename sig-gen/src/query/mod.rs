@@ -25,7 +25,6 @@ const OPTIMISM_TOKEN_ADDRESS: Address = address!("420000000000000000000000000000
 
 #[derive(Debug, Clone)]
 pub struct RoleQuerier {
-    pub provider: ReqwestProvider,
     pub badgeholders: Arc<RwLock<HashSet<Address>>>,
 }
 
@@ -90,7 +89,7 @@ impl RoleQuerier {
     }
 
     /// Create a new RoleQuerier instance and poll for badgeholders every 60 seconds.
-    pub async fn new(provider: ReqwestProvider) -> Result<(Self, JoinHandle<()>)> {
+    pub async fn new() -> Result<(Self, JoinHandle<()>)> {
         let badgeholders = Arc::new(RwLock::new(Self::fetch_badgeholders().await?));
         let b = badgeholders.clone();
         let poller = spawn(async move {
@@ -105,26 +104,25 @@ impl RoleQuerier {
             }
         });
 
-        Ok((
-            RoleQuerier {
-                provider,
-                badgeholders,
-            },
-            poller,
-        ))
+        Ok((RoleQuerier { badgeholders }, poller))
     }
 
-    pub async fn is_role(&self, address: Address, role: Role) -> Result<bool> {
+    pub async fn is_role(
+        &self,
+        provider: ReqwestProvider,
+        address: Address,
+        role: Role,
+    ) -> Result<bool> {
         match role {
             Role::Hidden => Ok(true),
             Role::Badgeholder => self.is_badgeholder(address).await,
-            Role::Delegate => self.is_delegate(address).await,
-            Role::Delegator => self.is_delegator(address).await,
+            Role::Delegate => self.is_delegate(provider, address).await,
+            Role::Delegator => self.is_delegator(provider, address).await,
         }
     }
 
-    async fn is_delegate(&self, address: Address) -> Result<bool> {
-        let contract = OptimismToken::new(OPTIMISM_TOKEN_ADDRESS, self.provider.clone());
+    async fn is_delegate(&self, provider: ReqwestProvider, address: Address) -> Result<bool> {
+        let contract = OptimismToken::new(OPTIMISM_TOKEN_ADDRESS, provider);
         let votes = contract.getVotes(address).call().await?;
         Ok(votes._0 > Uint::ZERO)
     }
@@ -134,8 +132,8 @@ impl RoleQuerier {
         Ok(badgeholder_list.contains(&address))
     }
 
-    async fn is_delegator(&self, address: Address) -> Result<bool> {
-        let contract = OptimismToken::new(OPTIMISM_TOKEN_ADDRESS, self.provider.clone());
+    async fn is_delegator(&self, provider: ReqwestProvider, address: Address) -> Result<bool> {
+        let contract = OptimismToken::new(OPTIMISM_TOKEN_ADDRESS, provider);
         let d = || async { contract.delegates(address).call().await };
         let b = || async { contract.balanceOf(address).call().await };
         let (delegate, balance) = try_join!(d(), b())?;

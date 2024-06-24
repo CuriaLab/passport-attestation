@@ -28,6 +28,10 @@ async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
 
     let provider = ProviderBuilder::new().on_http(Url::parse(&var("NODE_URL")?)?);
+    let testnet_provider = var("TESTNET_URL")
+        .ok()
+        .map(|url| Some(ProviderBuilder::new().on_http(Url::parse(&url).ok()?)))
+        .flatten();
     let private_key = EdFr::from_be_bytes_mod_order(&hex::decode(&var("PRIVATE_KEY")?)?);
     let public_key = (EdwardsAffine::generator() * private_key).into_affine();
     let pubkey_registry = Address::from_hex(&var("PUBKEY_REGISTRY")?)?;
@@ -43,13 +47,14 @@ async fn main() -> Result<()> {
         );
     }
 
-    let (role_querier, poller) = RoleQuerier::new(provider.clone()).await?;
+    let (role_querier, poller) = RoleQuerier::new().await?;
 
     let app = Router::new()
         .route("/", get(|| async { "Hello, World!" }))
         .nest("/", router())
         .with_state(State {
             provider,
+            testnet_provider,
             querier: role_querier,
             private_key,
             pubkey_registry,

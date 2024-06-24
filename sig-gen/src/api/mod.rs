@@ -27,12 +27,27 @@ pub fn router() -> Router<State> {
 pub async fn signature(
     AState(State {
         querier,
+        testnet_provider,
         private_key,
         provider,
         pubkey_registry,
     }): AState<State>,
-    Json(SignatureBody { signature, address }): Json<SignatureBody>,
+    Json(SignatureBody {
+        signature,
+        address,
+        is_testnet,
+    }): Json<SignatureBody>,
 ) -> Result<(StatusCode, Json<Value>), (StatusCode, Json<Value>)> {
+    let provider = match (is_testnet, testnet_provider) {
+        (Some(true), Some(p)) => p,
+        (Some(true), None) => {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "message": "Testnet provider not set" })),
+            ))
+        }
+        _ => provider,
+    };
     let message = format!("CURIA VERIFY ACCOUNT OWNERSHIP {}", address);
 
     if !match signature {
@@ -54,7 +69,7 @@ pub async fn signature(
                 y: ark_ed_on_bn254::Fq::from_be_bytes_mod_order(&r[32..]),
             };
             let s = ark_ed_on_bn254::Fr::from_be_bytes_mod_order(&s);
-            let registry = KeyRegistry::new(pubkey_registry, provider);
+            let registry = KeyRegistry::new(pubkey_registry, provider.clone());
             let key = registry.key(address).call().await.map_err(|e| {
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
@@ -95,7 +110,7 @@ pub async fn signature(
     let signatures = ALL_ROLES
         .into_iter()
         .zip(
-            try_join_all(ALL_ROLES.map(|role| querier.is_role(address, role)))
+            try_join_all(ALL_ROLES.map(|role| querier.is_role(provider.clone(), address, role)))
                 .await
                 .map_err(|e| {
                     (

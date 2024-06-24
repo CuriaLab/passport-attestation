@@ -11,6 +11,7 @@ use crate::query::RoleQuerier;
 #[derive(Debug, Clone)]
 pub struct State {
     pub provider: ReqwestProvider,
+    pub testnet_provider: Option<ReqwestProvider>,
     pub querier: RoleQuerier,
     pub private_key: EdFr,
     pub pubkey_registry: Address,
@@ -20,6 +21,7 @@ pub struct State {
 pub struct SignatureBody {
     pub signature: Signature,
     pub address: Address,
+    pub is_testnet: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
