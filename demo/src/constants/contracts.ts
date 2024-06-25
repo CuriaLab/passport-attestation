@@ -1,4 +1,5 @@
-import { parseAbi, parseAbiParameters } from "viem"
+import { parseAbi, parseAbiParameters, zeroHash } from "viem"
+import { optimism, optimismSepolia } from "viem/chains"
 
 export namespace Addresses {
   export const EAS = "0x4200000000000000000000000000000000000021"
@@ -24,5 +25,19 @@ export namespace Abis {
   ])
 }
 
-export const SCHEMA_ID =
+export const BADGEHOLDER_SCHEMA_ID =
   "0xfdcfdad2dbe7489e0ce56b260348b7f14e8365a8a325aef9834818c00d46b31b"
+
+export const EAS = {
+  [optimism.id]: {
+    schema: zeroHash,
+    graphql: "https://optimism.easscan.org/graphql",
+    explorer: "https://optimism.easscan.org",
+  },
+  [optimismSepolia.id]: {
+    schema:
+      "0x1f2ad0b1358e5cc2e4a5a2667f4842a49883edd2dc4f74a05cb1241373b3dd27",
+    graphql: "https://optimism-sepolia.easscan.org/graphql",
+    explorer: "https://optimism-sepolia.easscan.org",
+  },
+} as const

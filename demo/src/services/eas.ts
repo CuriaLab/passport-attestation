@@ -1,12 +1,6 @@
-import { Abis, SCHEMA_ID } from "@/constants/contracts"
+import { Abis, BADGEHOLDER_SCHEMA_ID, EAS } from "@/constants/contracts"
 import axios from "axios"
-import {
-  Address,
-  checksumAddress,
-  decodeAbiParameters,
-  Hex,
-  parseAbiParameters,
-} from "viem"
+import { Address, checksumAddress, decodeAbiParameters, Hex } from "viem"
 
 import { env } from "@/env.mjs"
 
@@ -26,7 +20,7 @@ export const queryBadgeholders = async (forAddress?: Address) => {
                     `,
       variables: {
         where: {
-          id: SCHEMA_ID,
+          id: BADGEHOLDER_SCHEMA_ID,
         },
         take: 10,
         attestationsWhere2: {
@@ -37,7 +31,7 @@ export const queryBadgeholders = async (forAddress?: Address) => {
             ],
           },
           [forAddress ? "recipient" : ""]: {
-            equals: forAddress,
+            equals: formatted,
           },
           revoked: {
             equals: false,
@@ -67,4 +61,67 @@ export const queryBadgeholders = async (forAddress?: Address) => {
         .filter((a) => a.round === env.NEXT_PUBLIC_BADGEHOLDER_ROUND)
       return refIDs[0]?.id
     })
+}
+
+export const queryAttestations = async (
+  chainId: keyof typeof EAS,
+  page: number = 0,
+  size: number = 10
+) => {
+  const eas = EAS[chainId]
+  const skip = page * size
+  return axios
+    .post(eas.graphql, {
+      query: `
+                        query Query($where: SchemaWhereUniqueInput!, $take: Int, $skip: Int, $attestationsWhere2: AttestationWhereInput, $orderBy: [AttestationOrderByWithRelationInput!]) {
+                          schema(where: $where) {
+                            attestations(take: $take, skip: $skip, where: $attestationsWhere2, orderBy: $orderBy) {
+                              id
+                              data
+                              revocationTime
+                              attester
+                              recipient
+                              time
+                              txid
+                            }
+                          }
+                        }
+                    `,
+      variables: {
+        where: {
+          id: eas.schema,
+        },
+        take: size,
+        skip,
+        attestationsWhere2: {},
+        orderBy: [
+          {
+            timeCreated: "desc",
+          },
+        ],
+      },
+    })
+    .then((res) =>
+      (
+        res.data.data.schema.attestations as {
+          id: Hex
+          data: Hex
+          revocationTime: number
+          attester: Address
+          recipient: Address
+          time: number
+          txid: string
+        }[]
+      ).map((a) => {
+        const data = decodeAbiParameters(Abis.SCHEMA_ABI_PARAMETER, a.data)
+        return {
+          ...a,
+          data: {
+            role: Number(data[0]),
+            message: data[1],
+            ref: data[2],
+          },
+        }
+      })
+    )
 }

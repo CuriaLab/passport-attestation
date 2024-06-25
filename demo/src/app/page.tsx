@@ -1,12 +1,13 @@
 import { siteConfig } from "@/config/site"
 import { ConnectWalletButton } from "@/components/button/connect-wallet"
 import { ModeToggle } from "@/components/button/mode-toggle"
+import { AttestationListCard } from "@/components/card/attestation-list"
 import { EndorsePublicCard } from "@/components/card/endorse-public"
 import { Icons } from "@/components/icons"
 
 export default function Home() {
   return (
-    <main className="flex h-screen justify-center py-8 md:py-16">
+    <main className="flex h-screen justify-center py-8">
       <div className="container flex max-w-[64rem] flex-col items-center gap-4">
         <div className="flex w-full flex-col justify-between gap-2 sm:flex-row">
           <div className="flex items-center gap-2">
@@ -20,7 +21,10 @@ export default function Home() {
             <ModeToggle />
           </div>
         </div>
-        <EndorsePublicCard />
+        <div className="flex w-full flex-col gap-4 md:flex-row">
+          <EndorsePublicCard />
+          <AttestationListCard />
+        </div>
       </div>
     </main>
   )

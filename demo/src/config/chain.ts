@@ -7,6 +7,8 @@ import { env } from "@/env.mjs"
 
 import { siteConfig } from "./site"
 
+export const chains = [optimism, optimismSepolia] as const
+
 export const getConfig = () => {
   return getDefaultConfig({
     appName: siteConfig.name,

@@ -1,10 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Abis, Addresses, SCHEMA_ID } from "@/constants/contracts"
+import { Abis, Addresses, EAS } from "@/constants/contracts"
 import { queryBadgeholders } from "@/services/eas"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { cx } from "class-variance-authority"
 import _ from "lodash"
 import { useForm } from "react-hook-form"
@@ -18,6 +18,7 @@ import {
 } from "wagmi"
 import { z } from "zod"
 
+import { ALL_ROLES, Role } from "@/types/role"
 import { ethereumClient } from "@/config/chain"
 
 import { Button } from "../ui/button"
@@ -45,14 +46,6 @@ import { Textarea } from "../ui/textarea"
 import { ToastAction } from "../ui/toast"
 import { useToast } from "../ui/use-toast"
 
-enum Role {
-  None = "None",
-  Badgeholder = "Badgeholder",
-  Delegate = "Delegate",
-  Delegator = "Delegator",
-}
-const ALL_ROLES = [Role.None, Role.Badgeholder, Role.Delegate, Role.Delegator]
-
 const FormSchema = z.object({
   anonymous: z.boolean(),
   address: z
@@ -72,6 +65,7 @@ export const EndorsePublicCard = () => {
   const account = useAccount()
   const client = usePublicClient()
   const walletClient = useWalletClient()
+  const queryClient = useQueryClient()
 
   const chainId = useChainId()
   const chains = useChains()
@@ -85,7 +79,7 @@ export const EndorsePublicCard = () => {
     enabledRoles: Role[]
     badgeholderRefId: Hex | null
   }>({
-    queryKey: ["roles", account.address],
+    queryKey: ["roles", account.address, chainId],
     queryFn: async () => {
       if (!account.address)
         return {
@@ -168,7 +162,7 @@ export const EndorsePublicCard = () => {
         functionName: "attest",
         args: [
           {
-            schema: SCHEMA_ID,
+            schema: EAS[chainId].schema,
             data: {
               expirationTime: 0n,
               recipient: recipient as Address,
@@ -210,6 +204,17 @@ export const EndorsePublicCard = () => {
         ),
       })
 
+      queryClient
+        .invalidateQueries({
+          queryKey: ["attestations", chainId],
+        })
+        .then(async () => {
+          await new Promise((resolve) => setTimeout(resolve, 1500))
+          await queryClient.prefetchQuery({
+            queryKey: ["attestations", chainId],
+          })
+        })
+
       form.reset()
     } catch (error: any) {
       toast({
@@ -225,7 +230,7 @@ export const EndorsePublicCard = () => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <Card className="mx-auto">
+        <Card className="mx-auto w-full max-w-full md:max-w-[400px]">
           <CardHeader>
             <CardTitle>Endorse</CardTitle>
             <CardDescription>
@@ -256,7 +261,6 @@ export const EndorsePublicCard = () => {
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="address"
