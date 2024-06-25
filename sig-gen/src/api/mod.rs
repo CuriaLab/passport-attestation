@@ -10,7 +10,8 @@ use alloy::{
     signers::local::PrivateKeySigner,
 };
 use anyhow::Result;
-use ark_ff::{BigInteger, PrimeField};
+use ark_ff::{BigInteger, PrimeField, UniformRand};
+use ark_std::rand::rngs::OsRng;
 use axum::{
     extract::{Json, State as AState},
     routing::post,
@@ -158,10 +159,12 @@ pub async fn signature(
         .filter(|(_, i)| *i)
         .map(|(role, _)| -> Result<Value> {
             let role_u8 = role as u8;
+            let random_nonce = ark_ed_on_bn254::Fq::rand(&mut OsRng);
             let identity = hash(&[
                 ark_ed_on_bn254::Fq::from_be_bytes_mod_order(address.as_ref()),
                 ark_ed_on_bn254::Fq::from(role_u8),
                 ark_ed_on_bn254::Fq::from(now_truncated_day),
+                random_nonce
             ])?;
             let signature = eddsa_sign(state.private_key, identity)?;
 
@@ -171,6 +174,7 @@ pub async fn signature(
                 "sig_rx": format!("0x{}", hex::encode(signature.0.x.into_bigint().to_bytes_be())),
                 "sig_ry": format!("0x{}", hex::encode(signature.0.y.into_bigint().to_bytes_be())),
                 "sig_s": format!("0x{}", hex::encode(signature.1.into_bigint().to_bytes_be())),
+                "random_nonce": format!("0x{}", hex::encode(random_nonce.into_bigint().to_bytes_be())),
             }))
         })
         .collect::<Result<Vec<_>>>()

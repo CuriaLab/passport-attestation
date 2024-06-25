@@ -168,9 +168,10 @@ mod tests {
         let pk = (EdAffine::generator() * sk).into_affine();
         let address =
             Fr::from_be_bytes_mod_order(&hex::decode("000000000000000000000000000000000000dEaD")?);
+        let random_nonce = Fr::from(123456789000u64);
         let role = Fr::from(1);
         let timestamp = Fr::from(1718875852u64);
-        let identity = hash(&[address, role, timestamp])?;
+        let identity = hash(&[address, role, timestamp, random_nonce])?;
         let (sig_r, sig_s) = eddsa_sign(sk, identity)?;
         let mut hasher = Keccak::v256();
         hasher.update(b"Hello, world!");
@@ -178,17 +179,21 @@ mod tests {
         hasher.finalize(&mut raw_msg);
         let msg = Fr::from_be_bytes_mod_order(&raw_msg);
         let nonce = Fr::from(123456789);
-        let revoker = hash(&[identity, convert(&sig_s), msg])?;
+        let secret = Fr::from_be_bytes_mod_order(b"secret");
+        let revoker = hash(&[timestamp, secret])?;
         let revoker_hash = hash(&[revoker, revoker])?;
 
         println!("address: {}", address);
         println!("sig_s: {}", sig_s);
         println!("sig_r: {}", sig_r);
+        println!("random_nonce: {}", random_nonce);
         println!("pk: {}", pk);
         println!("role: {}", role);
         println!("msg: {}", msg);
         println!("nonce: {}", nonce);
+        println!("timestamp: {}", timestamp);
         println!("revoker: {}", revoker);
+        println!("secret: {}", secret);
         println!("revoker_hash: {}", revoker_hash);
 
         Ok(())
