@@ -1,11 +1,15 @@
 import "@/styles/globals.css"
 
 import type { Metadata, Viewport } from "next"
+import getConfig from "next/config"
 import { Inter } from "next/font/google"
+import { headers } from "next/headers"
+import { cookieToInitialState } from "wagmi"
 
 import { siteConfig } from "@/config/site"
 import { cn } from "@/lib/utils"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Providers } from "@/components/wagmi-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -63,6 +67,11 @@ export const viewport: Viewport = {
 }
 
 export default function RootLayout({ children }: RootLayoutProps) {
+  const initialState = cookieToInitialState(
+    getConfig(),
+    headers().get("cookie")
+  )
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
@@ -72,14 +81,16 @@ export default function RootLayout({ children }: RootLayoutProps) {
           inter.className
         )}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+        <Providers initialState={initialState}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
+        </Providers>
       </body>
     </html>
   )
