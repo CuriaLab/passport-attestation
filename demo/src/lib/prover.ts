@@ -1,32 +1,48 @@
+import { PUBLIC_KEY } from "@/constants/contracts"
 import { BarretenbergBackend } from "@noir-lang/backend_barretenberg"
 import { Noir } from "@noir-lang/noir_js"
-import { Address, keccak256, toHex } from "viem"
+import { Address, Hex, hexToBigInt, keccak256, pad, toHex } from "viem"
+import { generatePrivateKey } from "viem/accounts"
 
 import { CuriaSignature } from "@/types/signature"
 
-import circuit from "../../public/circuits.json"
-
+const modulo =
+  21888242871839275222246405745257275088548364400416034343698204186575808495617n
 export const prove = async (
   address: Address,
   curiaSignature: CuriaSignature,
   msg: string,
-  timestamp: number
+  timestamp: number,
+  revokerSecret: string
 ) => {
+  const circuit = await import("../../public/circuits.json")
   const backend = new BarretenbergBackend(circuit as any)
   const noir = new Noir(circuit as any, backend)
-  const hashedMsg = keccak256(toHex(msg))
+  const hashedMsg = toHex(hexToBigInt(keccak256(toHex(msg))) % modulo)
+  const revokerSecretHash = toHex(
+    hexToBigInt(keccak256(toHex(revokerSecret))) % modulo
+  )
+  const nonce = toHex(hexToBigInt(generatePrivateKey()) % modulo)
   const proof = await noir.generateProof({
     address,
+    msg: hashedMsg,
+    nonce,
+    revoker_secret: revokerSecretHash,
+    role: curiaSignature.role,
+    sig_s: curiaSignature.sig_s,
+    timestamp: timestamp,
+    random_nonce: curiaSignature.random_nonce,
+    pubkey: PUBLIC_KEY,
     sig_r: {
       x: curiaSignature.sig_rx,
       y: curiaSignature.sig_ry,
     },
-    sig_s: curiaSignature.sig_s,
-    role: curiaSignature.role,
-    pubkey: {
-      x: "0x26b7fcabdd999eb3259d397bc660e0fec848b73e99dca8755dadc3f47e54adde",
-      y: "0x234de9f873dce1536cb1a86ae5db8a588b973b17546db327f6170205f2f0bf71",
-    },
-    msg: hashedMsg,
   })
+
+  return {
+    proof: toHex(proof.proof),
+    nonce: pad(nonce),
+    timestamp: pad(toHex(timestamp)),
+    revokerHash: pad(proof.publicInputs[6] as Hex),
+  }
 }

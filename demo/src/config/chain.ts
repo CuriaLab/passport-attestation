@@ -1,5 +1,5 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit"
-import { createClient, createPublicClient } from "viem"
+import { createPublicClient } from "viem"
 import { mainnet, optimism, optimismSepolia } from "viem/chains"
 import { cookieStorage, createConfig, createStorage, http } from "wagmi"
 
@@ -13,7 +13,8 @@ export const getConfig = () => {
   return getDefaultConfig({
     appName: siteConfig.name,
     projectId: env.NEXT_PUBLIC_WC_PROJECT_ID,
-    chains: [optimism, optimismSepolia],
+    //chains: [optimism, optimismSepolia],
+    chains: [optimismSepolia],
     ssr: true,
     storage: createStorage({
       storage: cookieStorage,

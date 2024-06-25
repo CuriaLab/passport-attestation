@@ -4,4 +4,5 @@ export type CuriaSignature = {
   sig_rx: string
   sig_ry: string
   sig_s: string
+  random_nonce: string
 }

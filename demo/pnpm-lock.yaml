@@ -12,8 +12,8 @@ importers:
         specifier: ^3.6.0
         version: 3.6.0(react-hook-form@7.52.0(react@18.3.1))
       '@noir-lang/backend_barretenberg':
-        specifier: ^0.31.0
-        version: 0.31.0
+        specifier: ^0.30.0
+        version: 0.30.0
       '@noir-lang/noir_js':
         specifier: ^0.30.0
         version: 0.30.0
@@ -143,8 +143,8 @@ packages:
     resolution: {integrity: sha512-30iZtAPgz+LTIYoeivqYo853f02jBYSd5uGnGpkFV0M3xOt9aN73erkgYAmZU43x4VfqcnLxW9Kpg3R5LC4YYw==}
     engines: {node: '>=6.0.0'}
 
-  '@aztec/bb.js@0.41.0':
-    resolution: {integrity: sha512-Uqez8YRu+nlPdXfrqeEBF/Mz3OhhK39zXL4gzN/pGhp4FlEkeTLpCx7etHXz6aodyjri6lQCv219tGXG2IAQoA==}
+  '@aztec/bb.js@0.38.0':
+    resolution: {integrity: sha512-74MX3ieK0Oz3zUqbSfF1Bb25J38lGHkD4ajrOXfH1A97HMLCsOI5Rv40D5VUnv2JRnii3a9HU/ft26QafTsJQw==}
     hasBin: true
 
   '@babel/code-frame@7.24.2':
@@ -1292,8 +1292,8 @@ packages:
   '@noir-lang/acvm_js@0.46.0':
     resolution: {integrity: sha512-1iDEHumZJVzaxC+Fr9eB8x0iCDDiW+W6tZW9kkKwyUjKtAWoqxR6ea8/aVRw/JdQ3QjiERZt94iki9tK63YqmQ==}
 
-  '@noir-lang/backend_barretenberg@0.31.0':
-    resolution: {integrity: sha512-bVmv6O2BX3wUyrT5dmY9Z5oABTFYsBBtSMOA5nGalyKsZPaIwwBXpk8rF90IhR6U6jh6uZMOhzpKHbZl4WBXKA==}
+  '@noir-lang/backend_barretenberg@0.30.0':
+    resolution: {integrity: sha512-siQwExKNYEcX5NcndHU1DWhXyGZLJdoIJ++/LFWFJEiVqtvM5lgGzhJPQWwPsqJtwX+3/5uS4I7ZYq3hJ6aqOA==}
 
   '@noir-lang/noir_js@0.30.0':
     resolution: {integrity: sha512-z+Xh/eikHRNB6ycbAiMZKRx/kPaJdDychTpsXZyxn0BRSvsqyaX10gVO5zCzpQ5vDPkOT04ZPP8sew6mJyhYuw==}
@@ -1303,9 +1303,6 @@ packages:
 
   '@noir-lang/types@0.30.0':
     resolution: {integrity: sha512-jjMI1VX46SGJ9cXnaBSXY7HHUOATgsCeYdxwCj5uFnIPLnaUtiwuvZV0xUsaFYfW7dUPK7P+mpHmfEy2W1acJg==}
-
-  '@noir-lang/types@0.31.0':
-    resolution: {integrity: sha512-KNLJ/KnvLBLo3pVg6IJWIMPRUYs8fkIngIFdtzHaaovctYpAsUKAF4KKh8ITaSEk7hLAIiHjLunSfQ8wSe7HOA==}
 
   '@parcel/watcher-android-arm64@2.4.1':
     resolution: {integrity: sha512-LOi/WTbbh3aTn2RYddrO8pnapixAziFl6SMxHM69r3tvdSm94JtCenaKgk1GRg5FJ5wpMCpHeW+7yqPlvZv7kg==}
@@ -5745,7 +5742,7 @@ snapshots:
       '@jridgewell/gen-mapping': 0.3.5
       '@jridgewell/trace-mapping': 0.3.25
 
-  '@aztec/bb.js@0.41.0':
+  '@aztec/bb.js@0.38.0':
     dependencies:
       comlink: 4.4.1
       commander: 10.0.1
@@ -7242,10 +7239,10 @@ snapshots:
 
   '@noir-lang/acvm_js@0.46.0': {}
 
-  '@noir-lang/backend_barretenberg@0.31.0':
+  '@noir-lang/backend_barretenberg@0.30.0':
     dependencies:
-      '@aztec/bb.js': 0.41.0
-      '@noir-lang/types': 0.31.0
+      '@aztec/bb.js': 0.38.0
+      '@noir-lang/types': 0.30.0
       fflate: 0.8.2
     transitivePeerDependencies:
       - supports-color
@@ -7261,8 +7258,6 @@ snapshots:
       '@noir-lang/types': 0.30.0
 
   '@noir-lang/types@0.30.0': {}
-
-  '@noir-lang/types@0.31.0': {}
 
   '@parcel/watcher-android-arm64@2.4.1':
     optional: true

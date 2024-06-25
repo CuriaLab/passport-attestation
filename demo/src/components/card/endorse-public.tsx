@@ -1,27 +1,28 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Abis, Addresses, EAS } from "@/constants/contracts"
-import { getCuriaSignature } from "@/services/curia"
-import { queryBadgeholders } from "@/services/eas"
+import { getCuriaSignature, proxyAnonymousAttestation } from "@/services/curia"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 import { cx } from "class-variance-authority"
 import _ from "lodash"
 import { useForm } from "react-hook-form"
-import { Address, encodeAbiParameters, Hex, zeroAddress, zeroHash } from "viem"
 import {
-  useAccount,
-  useChainId,
-  useChains,
-  usePublicClient,
-  useWalletClient,
-} from "wagmi"
+  Address,
+  encodeAbiParameters,
+  encodeFunctionData,
+  zeroHash,
+} from "viem"
+import { optimism } from "viem/chains"
+import { useAccount, useChainId, usePublicClient, useWalletClient } from "wagmi"
 import { z } from "zod"
 
 import { ALL_ROLES, Role } from "@/types/role"
 import { ethereumClient } from "@/config/chain"
+import { getBlockExplorer } from "@/lib/chain"
 import { prove } from "@/lib/prover"
+import { useEnabledRoles } from "@/hooks/useEnabledRoles"
 
 import { Button } from "../ui/button"
 import {
@@ -48,13 +49,27 @@ import { Textarea } from "../ui/textarea"
 import { ToastAction } from "../ui/toast"
 import { useToast } from "../ui/use-toast"
 
+const AnonymousEnabledSchema = z.object({
+  enabled: z.literal(true),
+  password: z.string().min(1, "Password is required for anonymous endorsement"),
+})
+
+const AnonymousDisabledSchema = z.object({
+  enabled: z.literal(false),
+  password: z.string().optional(),
+})
+
 const FormSchema = z.object({
-  anonymous: z.boolean(),
+  anonymous: z.discriminatedUnion("enabled", [
+    AnonymousEnabledSchema,
+    AnonymousDisabledSchema,
+  ]),
   address: z
     .string()
     .regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address")
     .or(z.string().regex(/^[a-zA-Z0-9-]+\.eth$/, "Invalid ENS address")),
   role: z.nativeEnum(Role),
+  title: z.string().min(1, "Title is too short").max(50, "Title is too long"),
   message: z
     .string()
     .min(1, "Message is too short")
@@ -70,80 +85,23 @@ export const EndorsePublicCard = () => {
   const queryClient = useQueryClient()
 
   const chainId = useChainId()
-  const chains = useChains()
 
-  const {
-    data: { enabledRoles, badgeholderRefId } = {
-      enabledRoles: [Role.None],
-      badgeholderRefId: null,
-    },
-  } = useQuery<{
-    enabledRoles: Role[]
-    badgeholderRefId: Hex | null
-  }>({
-    queryKey: ["roles", account.address, chainId],
-    queryFn: async () => {
-      if (!account.address)
-        return {
-          enabledRoles: [Role.None],
-          badgeholderRefId: null,
-        }
-
-      const enabledRoles = [Role.None]
-      const [votingPower, balance, delegate, badgeholder] = await Promise.all([
-        client.readContract({
-          abi: Abis.OP_TOKEN_ABI,
-          address: Addresses.OP_TOKEN,
-          functionName: "getVotes",
-          args: [account.address],
-        }),
-        client.readContract({
-          abi: Abis.OP_TOKEN_ABI,
-          address: Addresses.OP_TOKEN,
-          functionName: "balanceOf",
-          args: [account.address],
-        }),
-        client.readContract({
-          abi: Abis.OP_TOKEN_ABI,
-          address: Addresses.OP_TOKEN,
-          functionName: "delegates",
-          args: [account.address],
-        }),
-        queryBadgeholders(account.address),
-      ])
-
-      if (badgeholder) {
-        enabledRoles.push(Role.Badgeholder)
-      }
-
-      if (votingPower > 0) {
-        enabledRoles.push(Role.Delegate)
-      }
-
-      if (
-        balance > 0 &&
-        delegate !== account.address &&
-        delegate !== zeroAddress
-      ) {
-        enabledRoles.push(Role.Delegator)
-      }
-
-      return {
-        enabledRoles,
-        badgeholderRefId: badgeholder,
-      }
-    },
-  })
+  const { enabledRoles, badgeholderRefId } = useEnabledRoles(account.address)
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      anonymous: false,
+      anonymous: {
+        enabled: false,
+      },
       address: "",
+      title: "",
       role: Role.None,
       message: "",
     },
   })
+
+  const blockExplorer = useMemo(() => getBlockExplorer(chainId), [chainId])
 
   const [submitting, setSubmitting] = useState(false)
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
@@ -160,8 +118,11 @@ export const EndorsePublicCard = () => {
         return
       }
 
-      if (data.anonymous) {
+      let tx
+      if (data.anonymous.enabled) {
         if (!account.address) return
+        if (!data.anonymous.password) return
+
         // get verfication signature
         const signature = await walletClient.data?.signMessage({
           message: `CURIA VERIFY ACCOUNT OWNERSHIP ${account.address}`,
@@ -185,12 +146,62 @@ export const EndorsePublicCard = () => {
         }
 
         // generate zk proof
-        await prove(
+        const { proof, nonce, revokerHash, timestamp } = await prove(
           account.address,
           signatureForThisRole,
-          data.message,
-          curiaSignature.timestamp
+          data.title + data.message,
+          curiaSignature.timestamp,
+          data.anonymous.password
         )
+
+        const schema = EAS[chainId].schema
+
+        const calldata = encodeFunctionData({
+          abi: Abis.ANNOYMOUS_ATTESTER_ABI,
+          functionName: "attest",
+          args: [
+            schema,
+            recipient as Address,
+            {
+              ref: zeroHash,
+              message: data.message,
+              title: data.title,
+              role: BigInt(signatureForThisRole.role),
+            },
+            {
+              proof,
+              nonce,
+              revokerHash,
+              timestamp,
+            },
+          ],
+        })
+
+        console.log([
+          schema,
+          recipient as Address,
+          {
+            ref: zeroHash,
+            message: data.message,
+            title: data.title,
+            role: BigInt(signatureForThisRole.role),
+          },
+          {
+            proof,
+            nonce,
+            revokerHash,
+            timestamp,
+          },
+        ])
+
+        const hash = await proxyAnonymousAttestation(
+          calldata,
+          chainId !== optimism.id
+        )
+
+        tx = await client.waitForTransactionReceipt({
+          hash,
+        })
       } else {
         const hash = await walletClient.data?.writeContract({
           abi: Abis.EAS_ABI,
@@ -207,6 +218,7 @@ export const EndorsePublicCard = () => {
                 value: 0n,
                 data: encodeAbiParameters(Abis.SCHEMA_ABI_PARAMETER, [
                   BigInt(ALL_ROLES.indexOf(data.role)),
+                  data.title,
                   data.message,
                   data.role === Role.Badgeholder ? badgeholderRefId! : "0x",
                 ]),
@@ -219,49 +231,45 @@ export const EndorsePublicCard = () => {
           return
         }
 
-        const tx = await client.waitForTransactionReceipt({
+        tx = await client.waitForTransactionReceipt({
           hash,
         })
+      }
 
-        const blockExplorer = chains.find((c) => c.id === chainId)
-          ?.blockExplorers?.default.url
-        toast({
-          title: "Transaction Completed",
-          description: `Endorsement successful. Transaction hash: ${tx.transactionHash}`,
-          action: (
-            <ToastAction
-              altText="Show"
-              onClick={() => {
-                window.open(
-                  `${blockExplorer}/tx/${tx.transactionHash}`,
-                  "_blank"
-                )
-              }}
-            >
-              Show
-            </ToastAction>
-          ),
+      toast({
+        title: "Transaction Completed",
+        description: `Endorsement successful. Transaction hash: ${tx.transactionHash}`,
+        action: (
+          <ToastAction
+            altText="Show"
+            className="max-w-[60%]"
+            onClick={() => {
+              window.open(`${blockExplorer}/tx/${tx.transactionHash}`, "_blank")
+            }}
+          >
+            Show
+          </ToastAction>
+        ),
+      })
+
+      queryClient
+        .invalidateQueries({
+          queryKey: ["attestations", chainId],
         })
-
-        queryClient
-          .invalidateQueries({
+        .then(async () => {
+          await new Promise((resolve) => setTimeout(resolve, 1500))
+          await queryClient.prefetchQuery({
             queryKey: ["attestations", chainId],
           })
-          .then(async () => {
-            await new Promise((resolve) => setTimeout(resolve, 1500))
-            await queryClient.prefetchQuery({
-              queryKey: ["attestations", chainId],
-            })
-          })
+        })
 
-        form.reset()
-      }
+      form.reset()
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message,
-        action: <ToastAction altText="Show">Show</ToastAction>,
       })
+      throw error
     } finally {
       setSubmitting(false)
     }
@@ -270,7 +278,7 @@ export const EndorsePublicCard = () => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <Card className="mx-auto w-full max-w-full md:max-w-[400px]">
+        <Card className="mx-auto w-full max-w-full md:max-w-[500px]">
           <CardHeader>
             <CardTitle>Endorse</CardTitle>
             <CardDescription>
@@ -281,7 +289,7 @@ export const EndorsePublicCard = () => {
             <div className="grid gap-4">
               <FormField
                 control={form.control}
-                name="anonymous"
+                name="anonymous.enabled"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between ">
                     <div className="w-[75%] space-y-0.5">
@@ -364,6 +372,25 @@ export const EndorsePublicCard = () => {
               />
               <FormField
                 control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Your message title here..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      The title you want to show when endorse.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="message"
                 render={({ field }) => (
                   <FormItem>
@@ -382,6 +409,25 @@ export const EndorsePublicCard = () => {
                   </FormItem>
                 )}
               />
+              {form.watch("anonymous.enabled") && (
+                <FormField
+                  control={form.control}
+                  name="anonymous.password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="password" />
+                      </FormControl>
+                      <FormDescription>
+                        The password to revoke the endorsement, must be kept
+                        secret.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-2">

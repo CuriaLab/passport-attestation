@@ -1,4 +1,4 @@
-import { parseAbi, parseAbiParameters, zeroHash } from "viem"
+import { parseAbi, parseAbiParameters, zeroAddress, zeroHash } from "viem"
 import { optimism, optimismSepolia } from "viem/chains"
 
 export namespace Addresses {
@@ -13,7 +13,7 @@ export namespace Abis {
     "function balanceOf(address account) external view returns (uint256)",
   ])
   export const SCHEMA_ABI_PARAMETER = parseAbiParameters(
-    "uint256 role, string message, bytes ref"
+    "uint256 role, string title, string message, bytes ref"
   )
   export const BADGEHOLDER_DATA_ABI_PARAMETER = parseAbiParameters(
     "string rpgfRound, address referredBy, string referredMethod"
@@ -22,6 +22,12 @@ export namespace Abis {
     "struct AttestationRequest { bytes32 schema; AttestationRequestData data; }",
     "struct AttestationRequestData { address recipient; uint64 expirationTime; bool revocable; bytes32 refUID; bytes data; uint256 value; }",
     "function attest(AttestationRequest calldata request) external payable returns (bytes32)",
+  ])
+  export const ANNOYMOUS_ATTESTER_ABI = parseAbi([
+    "struct AttestationProof { bytes proof; bytes32 revokerHash; bytes32 nonce; bytes32 timestamp; }",
+    "struct Schema { uint256 role; string title; string message; bytes ref; }",
+    "function attest(bytes32 schema, address recipient, Schema calldata data, AttestationProof calldata proof) external returns (bytes32)",
+    "function revoke(bytes32 schema, bytes32 uid, bytes32 revoker) external",
   ])
 }
 
@@ -33,11 +39,18 @@ export const EAS = {
     schema: zeroHash,
     graphql: "https://optimism.easscan.org/graphql",
     explorer: "https://optimism.easscan.org",
+    anonymousAttester: zeroAddress,
   },
   [optimismSepolia.id]: {
     schema:
-      "0x1f2ad0b1358e5cc2e4a5a2667f4842a49883edd2dc4f74a05cb1241373b3dd27",
+      "0xe947c758ac9ae50b478c9bb5ca18fba17d7fbd8cb2953753777ebfcc41aa1412",
     graphql: "https://optimism-sepolia.easscan.org/graphql",
     explorer: "https://optimism-sepolia.easscan.org",
+    anonymousAttester: "0x2e313Bc0b6AFB447FB439F784F92A933C15eB277",
   },
 } as const
+
+export const PUBLIC_KEY = {
+  x: "0x176f151b4a9643d5dbc1023c2f17ea2249aee6205f158bfa7d897997bc70fef7",
+  y: "0x10b85b3f732ab327178b7af4e4ef70f67dcfe0adbd8fa2e38fb7d632d2addea5",
+}

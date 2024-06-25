@@ -1,5 +1,6 @@
 import { Abis, BADGEHOLDER_SCHEMA_ID, EAS } from "@/constants/contracts"
 import axios from "axios"
+import _ from "lodash"
 import { Address, checksumAddress, decodeAbiParameters, Hex } from "viem"
 
 import { env } from "@/env.mjs"
@@ -102,7 +103,7 @@ export const queryAttestations = async (
       },
     })
     .then((res) =>
-      (
+      _.chain(
         res.data.data.schema.attestations as {
           id: Hex
           data: Hex
@@ -112,16 +113,25 @@ export const queryAttestations = async (
           time: number
           txid: string
         }[]
-      ).map((a) => {
-        const data = decodeAbiParameters(Abis.SCHEMA_ABI_PARAMETER, a.data)
-        return {
-          ...a,
-          data: {
-            role: Number(data[0]),
-            message: data[1],
-            ref: data[2],
-          },
-        }
-      })
+      )
+        .map((a) => {
+          try {
+            const data = decodeAbiParameters(Abis.SCHEMA_ABI_PARAMETER, a.data)
+            return {
+              ...a,
+              data: {
+                role: Number(data[0]),
+                title: data[1],
+                message: data[2],
+                ref: data[3],
+              },
+            }
+          } catch (e) {
+            console.error(e)
+            return undefined
+          }
+        })
+        .compact()
+        .value()
     )
 }
