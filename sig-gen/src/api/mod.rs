@@ -4,7 +4,7 @@ use alloy::{
     primitives::FixedBytes,
     providers::{
         network::{EthereumWallet, TransactionBuilder},
-        Provider, ProviderBuilder,
+        Provider, ProviderBuilder, WalletProvider,
     },
     rpc::types::TransactionRequest,
     signers::local::PrivateKeySigner,
@@ -48,6 +48,7 @@ pub async fn proxy(
 
     let tx_hash = async {
         let provider = ProviderBuilder::new()
+            .with_recommended_fillers()
             .wallet(EthereumWallet::new(PrivateKeySigner::from_bytes(
                 &state.proxy_private_key,
             )?))
@@ -71,18 +72,9 @@ pub async fn proxy(
 
 pub async fn signature(
     AState(state): AState<State>,
-    Json(SignatureBody {
-        signature,
-        address,
-        is_testnet,
-    }): Json<SignatureBody>,
+    Json(SignatureBody { signature, address }): Json<SignatureBody>,
 ) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
-    let provider = state.provider(is_testnet).map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({ "message": format!("Failed to get provider: {}", e) })),
-        )
-    })?;
+    let provider = state.provider;
     let message = format!("CURIA VERIFY ACCOUNT OWNERSHIP {}", address);
 
     if !match signature {

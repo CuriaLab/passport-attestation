@@ -42,7 +42,6 @@ pub struct ProxyTransactionRequest {
 pub struct SignatureBody {
     pub signature: Signature,
     pub address: Address,
-    pub is_testnet: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]

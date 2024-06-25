@@ -31,7 +31,7 @@ async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
 
     let provider = ProviderBuilder::new().on_http(Url::parse(&var("NODE_URL")?)?);
-    let testnet_provider = var("TESTNET_URL")
+    let testnet_provider = var("TESTNET_NODE_URL")
         .ok()
         .map(|url| Some(ProviderBuilder::new().on_http(Url::parse(&url).ok()?)))
         .flatten();
