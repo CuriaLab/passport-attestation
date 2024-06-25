@@ -64,12 +64,41 @@ contract AnonymousAttester is Ownable {
         emit SchemaRemoved(schema);
     }
 
-    function attest(
+    function _attest(
         bytes32 schema,
         address recipient,
         uint256 role,
-        string calldata title,
-        string calldata message,
+        string memory title,
+        string memory message,
+        bytes32 timestamp
+    ) internal returns (bytes32) {
+        return
+            eas.attest(
+                AttestationRequest({
+                    schema: schema,
+                    data: AttestationRequestData({
+                        recipient: recipient,
+                        expirationTime: 0,
+                        revocable: true,
+                        refUID: 0x0,
+                        value: 0,
+                        data: abi.encode(
+                            Schema({
+                                role: role,
+                                title: title,
+                                message: message,
+                                ref: bytes.concat(timestamp)
+                            })
+                        )
+                    })
+                })
+            );
+    }
+
+    function attest(
+        bytes32 schema,
+        address recipient,
+        Schema calldata data,
         AttestationProof calldata proof
     ) external returns (bytes32) {
         if (address(verifier) == address(0x0)) {
@@ -87,9 +116,9 @@ contract AnonymousAttester is Ownable {
         bytes32[] memory inputs = new bytes32[](7);
         inputs[0] = curiaPubkey[0];
         inputs[1] = curiaPubkey[1];
-        inputs[2] = bytes32(role);
+        inputs[2] = bytes32(data.role);
         inputs[3] = bytes32(
-            uint256(keccak256(bytes(message))) %
+            uint256(keccak256(bytes(string.concat(data.title, data.message)))) %
                 21888242871839275222246405745257275088548364400416034343698204186575808495617
         );
         inputs[4] = proof.nonce;
@@ -101,25 +130,13 @@ contract AnonymousAttester is Ownable {
             revert InvalidProof();
         }
 
-        bytes32 uid = eas.attest(
-            AttestationRequest({
-                schema: schema,
-                data: AttestationRequestData({
-                    recipient: recipient,
-                    expirationTime: 0,
-                    revocable: true,
-                    refUID: 0x0,
-                    value: 0,
-                    data: abi.encode(
-                        Schema({
-                            role: role,
-                            title: title,
-                            message: message,
-                            ref: bytes.concat(proof.timestamp)
-                        })
-                    )
-                })
-            })
+        bytes32 uid = _attest(
+            schema,
+            recipient,
+            data.role,
+            data.title,
+            data.message,
+            proof.timestamp
         );
         nonce[proof.nonce] = true;
         revokers[uid] = proof.revokerHash;

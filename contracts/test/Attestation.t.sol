@@ -63,7 +63,12 @@ contract AttestationTest is Test {
                     revocable: true,
                     refUID: 0x0,
                     data: abi.encode(
-                        Schema({role: 0, message: "Hello, World!", ref: ""})
+                        Schema({
+                            role: 0,
+                            title: "Hi",
+                            message: "Hello, World!",
+                            ref: ""
+                        })
                     ),
                     value: 0
                 })
@@ -79,7 +84,14 @@ contract AttestationTest is Test {
         assertEq(attestation.refUID, 0x0);
         assertEq(
             attestation.data,
-            abi.encode(Schema({role: 0, message: "Hello, World!", ref: ""}))
+            abi.encode(
+                Schema({
+                    role: 0,
+                    title: "Hi",
+                    message: "Hello, World!",
+                    ref: ""
+                })
+            )
         );
     }
 
@@ -98,6 +110,7 @@ contract AttestationTest is Test {
                     data: abi.encode(
                         Schema({
                             role: 1,
+                            title: "",
                             message: "Hello, World!",
                             ref: abi.encode(
                                 0x1cdc950166e76ba5a9cc46aed8f09b5611b309843d411500201ddd8574c148c2
@@ -121,6 +134,7 @@ contract AttestationTest is Test {
             abi.encode(
                 Schema({
                     role: 1,
+                    title: "",
                     message: "Hello, World!",
                     ref: abi.encode(
                         0x1cdc950166e76ba5a9cc46aed8f09b5611b309843d411500201ddd8574c148c2
@@ -145,6 +159,7 @@ contract AttestationTest is Test {
                     data: abi.encode(
                         Schema({
                             role: 1,
+                            title: "",
                             message: "Hello, World!",
                             ref: abi.encode(
                                 0x1cdc950166e76ba5a9cc46aed8f09b5611b309843d411500201ddd8574c148c2
@@ -170,7 +185,12 @@ contract AttestationTest is Test {
                     revocable: true,
                     refUID: 0x0,
                     data: abi.encode(
-                        Schema({role: 2, message: "Hello, World!", ref: ""})
+                        Schema({
+                            role: 2,
+                            title: "",
+                            message: "Hello, World!",
+                            ref: ""
+                        })
                     ),
                     value: 0
                 })
@@ -186,7 +206,9 @@ contract AttestationTest is Test {
         assertEq(attestation.refUID, 0x0);
         assertEq(
             attestation.data,
-            abi.encode(Schema({role: 2, message: "Hello, World!", ref: ""}))
+            abi.encode(
+                Schema({role: 2, title: "", message: "Hello, World!", ref: ""})
+            )
         );
     }
 
@@ -203,7 +225,12 @@ contract AttestationTest is Test {
                     revocable: true,
                     refUID: 0x0,
                     data: abi.encode(
-                        Schema({role: 3, message: "Hello, World!", ref: ""})
+                        Schema({
+                            role: 3,
+                            title: "",
+                            message: "Hello, World!",
+                            ref: ""
+                        })
                     ),
                     value: 0
                 })
@@ -219,7 +246,9 @@ contract AttestationTest is Test {
         assertEq(attestation.refUID, 0x0);
         assertEq(
             attestation.data,
-            abi.encode(Schema({role: 3, message: "Hello, World!", ref: ""}))
+            abi.encode(
+                Schema({role: 3, title: "", message: "Hello, World!", ref: ""})
+            )
         );
     }
 
@@ -237,7 +266,12 @@ contract AttestationTest is Test {
                     revocable: true,
                     refUID: 0x0,
                     data: abi.encode(
-                        Schema({role: 4, message: "Hello, World!", ref: ""})
+                        Schema({
+                            role: 4,
+                            title: "",
+                            message: "Hello, World!",
+                            ref: ""
+                        })
                     ),
                     value: 0
                 })

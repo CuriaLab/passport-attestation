@@ -54,8 +54,7 @@ contract AttestationTest is Test {
         bytes32 id = anonymousAttester.attest(
             schema,
             target,
-            role,
-            "Hello, world!",
+            Schema({role: role, title: "", message: "Hello, world!", ref: ""}),
             AttestationProof({
                 revokerHash: 0x156244c131d6f68246496786659cf2e7a1119e83b3e3d88173f1eb5ce3b110cf,
                 nonce: 0x00000000000000000000000000000000000000000000000000000000075bcd15,
@@ -77,6 +76,7 @@ contract AttestationTest is Test {
             abi.encode(
                 Schema({
                     role: role,
+                    title: "",
                     message: "Hello, world!",
                     ref: bytes.concat(bytes32(uint256(1718875852)))
                 })
@@ -108,8 +108,7 @@ contract AttestationTest is Test {
         anonymousAttester.attest(
             schema,
             target,
-            role,
-            "Hello, world!",
+            Schema({role: role, title: "", message: "Hello, world!", ref: ""}),
             AttestationProof({
                 revokerHash: bytes32(
                     uint256(
@@ -127,8 +126,7 @@ contract AttestationTest is Test {
         anonymousAttester.attest(
             schema,
             target,
-            role,
-            "Hello, world!",
+            Schema({role: role, title: "", message: "Hello, world!", ref: ""}),
             AttestationProof({
                 revokerHash: bytes32(
                     uint256(
@@ -146,8 +144,7 @@ contract AttestationTest is Test {
         anonymousAttester.attest(
             schema,
             target,
-            role,
-            "Hello, world!",
+            Schema({role: role, title: "", message: "Hello, world!", ref: ""}),
             AttestationProof({
                 revokerHash: 0x156244c131d6f68246496786659cf2e7a1119e83b3e3d88173f1eb5ce3b110cf,
                 nonce: 0x00000000000000000000000000000000000000000000000000000000075bcd15,
