@@ -58,9 +58,9 @@ contract DeployTestnet is Script {
         anonymousAttester.changePubkey(
             [
                 bytes32(
-                    hex"26b7fcabdd999eb3259d397bc660e0fec848b73e99dca8755dadc3f47e54adde"
+                    hex"176f151b4a9643d5dbc1023c2f17ea2249aee6205f158bfa7d897997bc70fef7"
                 ),
-                hex"234de9f873dce1536cb1a86ae5db8a588b973b17546db327f6170205f2f0bf71"
+                hex"10b85b3f732ab327178b7af4e4ef70f67dcfe0adbd8fa2e38fb7d632d2addea5"
             ]
         );
 
