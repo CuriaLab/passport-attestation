@@ -12,13 +12,14 @@ use alloy::{
 };
 use anyhow::Result;
 use ark_ec::{AffineRepr, CurveGroup};
-use ark_ed_on_bn254::{EdwardsAffine, Fr as EdFr};
+use ark_ed_on_bn254::Fr as EdFr;
 use ark_ff::{BigInteger, PrimeField};
 use axum::{routing::get, Router};
 use hyper::{header::CONTENT_TYPE, Method};
 use reqwest::Url;
 use sig_gen::{
     api::{router, State},
+    crypto::EdAffine,
     query::RoleQuerier,
 };
 use tokio::{net::TcpListener, select};
@@ -35,7 +36,7 @@ async fn main() -> Result<()> {
         .map(|url| Some(ProviderBuilder::new().on_http(Url::parse(&url).ok()?)))
         .flatten();
     let private_key = EdFr::from_be_bytes_mod_order(&hex::decode(&var("PRIVATE_KEY")?)?);
-    let public_key = (EdwardsAffine::generator() * private_key).into_affine();
+    let public_key = (EdAffine::generator() * private_key).into_affine();
     let pubkey_registry = Address::from_hex(&var("PUBKEY_REGISTRY")?)?;
     let anonymous_attestator = Address::from_hex(&var("ANONYMOUS_ATTESTOR")?)?;
     let proxy_private_key = B256::from_slice(&hex::decode(&var("PROXY_PRIVATE_KEY")?)?);
