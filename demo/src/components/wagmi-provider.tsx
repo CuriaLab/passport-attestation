@@ -7,8 +7,6 @@ import { WagmiProvider, type State } from "wagmi"
 
 import { getConfig } from "@/config/chain"
 
-import "@rainbow-me/rainbowkit/styles.css"
-
 type Props = {
   children: ReactNode
   initialState: State | undefined

@@ -1,4 +1,5 @@
 import "@/styles/globals.css"
+import "@rainbow-me/rainbowkit/styles.css"
 
 import type { Metadata, Viewport } from "next"
 import getConfig from "next/config"
@@ -8,6 +9,7 @@ import { cookieToInitialState } from "wagmi"
 
 import { siteConfig } from "@/config/site"
 import { cn } from "@/lib/utils"
+import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Providers } from "@/components/wagmi-provider"
 
@@ -89,6 +91,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             disableTransitionOnChange
           >
             {children}
+            <Toaster />
           </ThemeProvider>
         </Providers>
       </body>

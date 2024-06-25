@@ -1,5 +1,6 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit"
-import { optimism, optimismSepolia } from "viem/chains"
+import { createClient, createPublicClient } from "viem"
+import { mainnet, optimism, optimismSepolia } from "viem/chains"
 import { cookieStorage, createConfig, createStorage, http } from "wagmi"
 
 import { env } from "@/env.mjs"
@@ -21,6 +22,11 @@ export const getConfig = () => {
     },
   })
 }
+
+export const ethereumClient = createPublicClient({
+  transport: http("https://1rpc.io/eth"),
+  chain: mainnet,
+})
 
 declare module "wagmi" {
   interface Register {
