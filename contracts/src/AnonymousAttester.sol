@@ -68,6 +68,7 @@ contract AnonymousAttester is Ownable {
         bytes32 schema,
         address recipient,
         uint256 role,
+        string calldata title,
         string calldata message,
         AttestationProof calldata proof
     ) external returns (bytes32) {
@@ -112,6 +113,7 @@ contract AnonymousAttester is Ownable {
                     data: abi.encode(
                         Schema({
                             role: role,
+                            title: title,
                             message: message,
                             ref: bytes.concat(proof.timestamp)
                         })
