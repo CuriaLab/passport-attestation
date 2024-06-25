@@ -92,8 +92,8 @@ contract AnonymousAttester is Ownable {
                 21888242871839275222246405745257275088548364400416034343698204186575808495617
         );
         inputs[4] = proof.nonce;
-        inputs[5] = proof.revokerHash;
-        inputs[6] = proof.timestamp;
+        inputs[5] = proof.timestamp;
+        inputs[6] = proof.revokerHash;
         bool isVerified = verifier.verify(proof.proof, inputs);
 
         if (!isVerified) {
