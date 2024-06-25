@@ -4,14 +4,15 @@ fn main(
     address: Field,
     sig_s: Field,
     sig_r: Point,
+    random_nonce: Field,
+    revoker_secret: Field,
     pubkey: pub Point,
     role: pub Field,
     msg: pub Field,
     nonce: pub Field,
-    revoker_hash: pub Field,
     timestamp: pub Field
-) {
-    let message = poseidon::bn254::hash_3([address, role, timestamp]);
+) -> pub Field {
+    let message = poseidon::bn254::hash_4([address, role, timestamp, random_nonce]);
     let is_valid = eddsa_poseidon_verify(pubkey.x, pubkey.y, sig_s, sig_r.x, sig_r.y, message);
 
     assert(is_valid, "Signature is invalid");
@@ -19,10 +20,10 @@ fn main(
     let _ = msg * msg;
     let _ = nonce * nonce;
     let _ = timestamp * timestamp;
-    let revoker = poseidon::bn254::hash_3([message, sig_s, msg]);
+    let revoker = poseidon::bn254::hash_2([timestamp, revoker_secret]);
     let calculated_revoker_hash = poseidon::bn254::hash_2([revoker, revoker]);
 
-    assert(revoker_hash == calculated_revoker_hash, "Revoker hash is invalid");
+    calculated_revoker_hash
 }
 
 #[test]
@@ -43,21 +44,23 @@ fn test_poseidon_verify() {
 
 #[test]
 fn test_main() {
-    main(
+    let revoker_hash = main(
         57005, // 0x000000000000000000000000000000000000dEaD
-        1427860297441759022677808574306996626835089094313226040373638034714511660633,
+        1084962730721589343861882407938283729631298378329681939209113546914067968972,
         Point {
-        x: 20427897995191784322958268816791911454025156511622737324617550098495648896371,
-        y: 13475945305366082258359349275262445747601356417482798206955229178435023280121
+        x: 9511822940976101281659138595606619745991906839893458237629594161066286490837,
+        y: 18714767357424465254042961065908942228149413171081771799954627430213815576545
     },
+        123456789000, // random nonce
+        126879297332596, // secret
         Point {
         x: 14362991499749677503784875617152783987369753795584406800566212563953275032114,
         y: 6253200752723491483166624601695387352044448859046905187389595930876836789475
     },
         1,
-        5735816763073854953388147237921, // Hello, world!
+        17054503776152541198994743246136244729586576172916155597340346297690777997537, // H(Hello, world!)
         123456789,
-        14041675743261546148041887336962757586381464911329133868108739484314530314422,
         1718875852
     );
+    assert_eq(revoker_hash, 9672195359866897248631522186500336244216588785587913256300043371390186885327);
 }
