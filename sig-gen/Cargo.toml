@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-alloy = { version = "0.1.2", features = ["provider-http", "contract", "std", "reqwest", "rpc-types-eth"], default-features = false }
+alloy = { version = "0.1.2", features = ["provider-http", "contract", "std", "reqwest", "rpc-types-eth", "signer-local"], default-features = false }
 anyhow = "1.0.86"
 ark-bn254 = { version = "0.4.0", features = ["std", "scalar_field"], default-features = false }
 ark-ec = { version = "0.4.2", default-features = false, features = ["parallel", "std"] }

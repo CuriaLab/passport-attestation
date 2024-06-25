@@ -1,6 +1,14 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use alloy::primitives::FixedBytes;
+use alloy::{
+    primitives::FixedBytes,
+    providers::{
+        network::{EthereumWallet, TransactionBuilder},
+        Provider, ProviderBuilder,
+    },
+    rpc::types::TransactionRequest,
+    signers::local::PrivateKeySigner,
+};
 use anyhow::Result;
 use ark_ff::{BigInteger, PrimeField};
 use axum::{
@@ -21,33 +29,59 @@ pub mod types;
 pub use types::*;
 
 pub fn router() -> Router<State> {
-    Router::new().route("/signature", post(signature))
+    Router::new()
+        .route("/signature", post(signature))
+        .route("/proxy", post(proxy))
+}
+
+pub async fn proxy(
+    AState(state): AState<State>,
+    Json(ProxyTransactionRequest { input, is_testnet }): Json<ProxyTransactionRequest>,
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
+    let provider = state.provider(is_testnet).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "message": format!("Failed to get provider: {}", e) })),
+        )
+    })?;
+
+    let tx_hash = async {
+        let provider = ProviderBuilder::new()
+            .wallet(EthereumWallet::new(PrivateKeySigner::from_bytes(
+                &state.proxy_private_key,
+            )?))
+            .on_provider(provider);
+        let tx_request = TransactionRequest::default()
+            .to(state.anonymous_attestator)
+            .with_input(input);
+        let tx_hash = *provider.send_transaction(tx_request).await?.tx_hash();
+        anyhow::Ok(tx_hash)
+    }
+    .await
+    .map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "message": format!("Failed to send transaction: {}", e) })),
+        )
+    })?;
+
+    Ok(Json(json!({ "tx_hash": tx_hash })))
 }
 
 pub async fn signature(
-    AState(State {
-        querier,
-        testnet_provider,
-        private_key,
-        provider,
-        pubkey_registry,
-    }): AState<State>,
+    AState(state): AState<State>,
     Json(SignatureBody {
         signature,
         address,
         is_testnet,
     }): Json<SignatureBody>,
-) -> Result<(StatusCode, Json<Value>), (StatusCode, Json<Value>)> {
-    let provider = match (is_testnet, testnet_provider) {
-        (Some(true), Some(p)) => p,
-        (Some(true), None) => {
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({ "message": "Testnet provider not set" })),
-            ))
-        }
-        _ => provider,
-    };
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
+    let provider = state.provider(is_testnet).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "message": format!("Failed to get provider: {}", e) })),
+        )
+    })?;
     let message = format!("CURIA VERIFY ACCOUNT OWNERSHIP {}", address);
 
     if !match signature {
@@ -69,7 +103,7 @@ pub async fn signature(
                 y: ark_ed_on_bn254::Fq::from_be_bytes_mod_order(&r[32..]),
             };
             let s = ark_ed_on_bn254::Fr::from_be_bytes_mod_order(&s);
-            let registry = KeyRegistry::new(pubkey_registry, provider.clone());
+            let registry = KeyRegistry::new(state.pubkey_registry, provider.clone());
             let key = registry.key(address).call().await.map_err(|e| {
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
@@ -110,14 +144,16 @@ pub async fn signature(
     let signatures = ALL_ROLES
         .into_iter()
         .zip(
-            try_join_all(ALL_ROLES.map(|role| querier.is_role(provider.clone(), address, role)))
-                .await
-                .map_err(|e| {
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(json!({ "message": format!("Failed to query role: {}", e) })),
-                    )
-                })?,
+            try_join_all(
+                ALL_ROLES.map(|role| state.querier.is_role(provider.clone(), address, role)),
+            )
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({ "message": format!("Failed to query role: {}", e) })),
+                )
+            })?,
         )
         .filter(|(_, i)| *i)
         .map(|(role, _)| -> Result<Value> {
@@ -127,7 +163,7 @@ pub async fn signature(
                 ark_ed_on_bn254::Fq::from(role_u8),
                 ark_ed_on_bn254::Fq::from(now_truncated_day),
             ])?;
-            let signature = eddsa_sign(private_key, identity)?;
+            let signature = eddsa_sign(state.private_key, identity)?;
 
             Ok(json!({
                 "role": role_u8,
@@ -145,11 +181,8 @@ pub async fn signature(
             )
         })?;
 
-    Ok((
-        StatusCode::OK,
-        Json(json!({
-            "signatures": signatures,
-            "timestamp": now_truncated_day,
-        })),
-    ))
+    Ok(Json(json!({
+        "signatures": signatures,
+        "timestamp": now_truncated_day,
+    })))
 }
