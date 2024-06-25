@@ -68,6 +68,7 @@ contract DeployTestnet is Script {
         resolver.addAuthorizedAttester(address(anonymousAttester));
 
         console.log("Schema ID: ", uint256(schema));
+        console.log("Resolver address: ", address(resolver));
         console.log("AnonymousAttester address: ", address(anonymousAttester));
 
         vm.stopBroadcast();
