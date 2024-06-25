@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Abis, Addresses, EAS } from "@/constants/contracts"
+import { getCuriaSignature } from "@/services/curia"
 import { queryBadgeholders } from "@/services/eas"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
@@ -20,6 +21,7 @@ import { z } from "zod"
 
 import { ALL_ROLES, Role } from "@/types/role"
 import { ethereumClient } from "@/config/chain"
+import { prove } from "@/lib/prover"
 
 import { Button } from "../ui/button"
 import {
@@ -147,6 +149,7 @@ export const EndorsePublicCard = () => {
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
     try {
       setSubmitting(true)
+
       const recipient = data.address.startsWith("0x")
         ? data.address
         : await ethereumClient.getEnsAddress({
@@ -156,66 +159,103 @@ export const EndorsePublicCard = () => {
         form.setError("address", { message: "Address not found" })
         return
       }
-      const hash = await walletClient.data?.writeContract({
-        abi: Abis.EAS_ABI,
-        address: Addresses.EAS,
-        functionName: "attest",
-        args: [
-          {
-            schema: EAS[chainId].schema,
-            data: {
-              expirationTime: 0n,
-              recipient: recipient as Address,
-              refUID: zeroHash,
-              revocable: true,
-              value: 0n,
-              data: encodeAbiParameters(Abis.SCHEMA_ABI_PARAMETER, [
-                BigInt(ALL_ROLES.indexOf(data.role)),
-                data.message,
-                data.role === Role.Badgeholder ? badgeholderRefId! : "0x",
-              ]),
-            },
-          },
-        ],
-      })
 
-      if (!hash) {
-        return
-      }
-
-      const tx = await client.waitForTransactionReceipt({
-        hash,
-      })
-
-      const blockExplorer = chains.find((c) => c.id === chainId)?.blockExplorers
-        ?.default.url
-      toast({
-        title: "Transaction Completed",
-        description: `Endorsement successful. Transaction hash: ${tx.transactionHash}`,
-        action: (
-          <ToastAction
-            altText="Show"
-            onClick={() => {
-              window.open(`${blockExplorer}/tx/${tx.transactionHash}`, "_blank")
-            }}
-          >
-            Show
-          </ToastAction>
-        ),
-      })
-
-      queryClient
-        .invalidateQueries({
-          queryKey: ["attestations", chainId],
+      if (data.anonymous) {
+        if (!account.address) return
+        // get verfication signature
+        const signature = await walletClient.data?.signMessage({
+          message: `CURIA VERIFY ACCOUNT OWNERSHIP ${account.address}`,
         })
-        .then(async () => {
-          await new Promise((resolve) => setTimeout(resolve, 1500))
-          await queryClient.prefetchQuery({
+        if (!signature) return
+        // get curia signature
+        const curiaSignature = await getCuriaSignature(
+          account.address,
+          signature,
+          "ECDSA"
+        )
+        // get signature for this role
+        const signatureForThisRole = curiaSignature.signatures.find(
+          (s) => ALL_ROLES[s.role] === data.role
+        )
+        // if no signature for this role, throw error
+        if (!signatureForThisRole) {
+          throw new Error(
+            "You need to verify your account ownership for this role"
+          )
+        }
+
+        // generate zk proof
+        await prove(
+          account.address,
+          signatureForThisRole,
+          data.message,
+          curiaSignature.timestamp
+        )
+      } else {
+        const hash = await walletClient.data?.writeContract({
+          abi: Abis.EAS_ABI,
+          address: Addresses.EAS,
+          functionName: "attest",
+          args: [
+            {
+              schema: EAS[chainId].schema,
+              data: {
+                expirationTime: 0n,
+                recipient: recipient as Address,
+                refUID: zeroHash,
+                revocable: true,
+                value: 0n,
+                data: encodeAbiParameters(Abis.SCHEMA_ABI_PARAMETER, [
+                  BigInt(ALL_ROLES.indexOf(data.role)),
+                  data.message,
+                  data.role === Role.Badgeholder ? badgeholderRefId! : "0x",
+                ]),
+              },
+            },
+          ],
+        })
+
+        if (!hash) {
+          return
+        }
+
+        const tx = await client.waitForTransactionReceipt({
+          hash,
+        })
+
+        const blockExplorer = chains.find((c) => c.id === chainId)
+          ?.blockExplorers?.default.url
+        toast({
+          title: "Transaction Completed",
+          description: `Endorsement successful. Transaction hash: ${tx.transactionHash}`,
+          action: (
+            <ToastAction
+              altText="Show"
+              onClick={() => {
+                window.open(
+                  `${blockExplorer}/tx/${tx.transactionHash}`,
+                  "_blank"
+                )
+              }}
+            >
+              Show
+            </ToastAction>
+          ),
+        })
+
+        queryClient
+          .invalidateQueries({
             queryKey: ["attestations", chainId],
           })
-        })
+          .then(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 1500))
+            await queryClient.prefetchQuery({
+              queryKey: ["attestations", chainId],
+            })
+          })
 
-      form.reset()
+        form.reset()
+      }
     } catch (error: any) {
       toast({
         title: "Error",
