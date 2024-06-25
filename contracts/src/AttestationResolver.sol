@@ -42,7 +42,7 @@ contract AttestationResolver is SchemaResolver, Ownable {
         Attestation calldata attestation,
         uint256
     ) internal virtual override returns (bool) {
-        Schema memory schema = abi.decode(attestation.data, (Schema));
+        Schema memory schema = schemaDecode(attestation.data);
 
         // Check if role is 0 -> no role is shown
         if (schema.role == 0) {

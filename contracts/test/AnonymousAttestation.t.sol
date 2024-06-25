@@ -73,7 +73,7 @@ contract AttestationTest is Test {
         assertEq(attestation.refUID, 0x0);
         assertEq(
             attestation.data,
-            abi.encode(
+            schemaEncode(
                 Schema({
                     role: role,
                     title: "",

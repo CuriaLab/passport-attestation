@@ -62,7 +62,7 @@ contract AttestationTest is Test {
                     expirationTime: 0,
                     revocable: true,
                     refUID: 0x0,
-                    data: abi.encode(
+                    data: schemaEncode(
                         Schema({
                             role: 0,
                             title: "Hi",
@@ -84,7 +84,7 @@ contract AttestationTest is Test {
         assertEq(attestation.refUID, 0x0);
         assertEq(
             attestation.data,
-            abi.encode(
+            schemaEncode(
                 Schema({
                     role: 0,
                     title: "Hi",
@@ -107,7 +107,7 @@ contract AttestationTest is Test {
                     expirationTime: 0,
                     revocable: true,
                     refUID: 0x0,
-                    data: abi.encode(
+                    data: schemaEncode(
                         Schema({
                             role: 1,
                             title: "",
@@ -131,7 +131,7 @@ contract AttestationTest is Test {
         assertEq(attestation.refUID, 0x0);
         assertEq(
             attestation.data,
-            abi.encode(
+            schemaEncode(
                 Schema({
                     role: 1,
                     title: "",
@@ -156,7 +156,7 @@ contract AttestationTest is Test {
                     expirationTime: 0,
                     revocable: true,
                     refUID: 0x0,
-                    data: abi.encode(
+                    data: schemaEncode(
                         Schema({
                             role: 1,
                             title: "",
@@ -184,7 +184,7 @@ contract AttestationTest is Test {
                     expirationTime: 0,
                     revocable: true,
                     refUID: 0x0,
-                    data: abi.encode(
+                    data: schemaEncode(
                         Schema({
                             role: 2,
                             title: "",
@@ -206,7 +206,7 @@ contract AttestationTest is Test {
         assertEq(attestation.refUID, 0x0);
         assertEq(
             attestation.data,
-            abi.encode(
+            schemaEncode(
                 Schema({role: 2, title: "", message: "Hello, World!", ref: ""})
             )
         );
@@ -224,7 +224,7 @@ contract AttestationTest is Test {
                     expirationTime: 0,
                     revocable: true,
                     refUID: 0x0,
-                    data: abi.encode(
+                    data: schemaEncode(
                         Schema({
                             role: 3,
                             title: "",
@@ -246,7 +246,7 @@ contract AttestationTest is Test {
         assertEq(attestation.refUID, 0x0);
         assertEq(
             attestation.data,
-            abi.encode(
+            schemaEncode(
                 Schema({role: 3, title: "", message: "Hello, World!", ref: ""})
             )
         );
@@ -265,7 +265,7 @@ contract AttestationTest is Test {
                     expirationTime: 0,
                     revocable: true,
                     refUID: 0x0,
-                    data: abi.encode(
+                    data: schemaEncode(
                         Schema({
                             role: 4,
                             title: "",
