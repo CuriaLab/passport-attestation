@@ -15,12 +15,14 @@ use ark_ec::{AffineRepr, CurveGroup};
 use ark_ed_on_bn254::{EdwardsAffine, Fr as EdFr};
 use ark_ff::{BigInteger, PrimeField};
 use axum::{routing::get, Router};
+use hyper::{header::CONTENT_TYPE, Method};
 use reqwest::Url;
 use sig_gen::{
     api::{router, State},
     query::RoleQuerier,
 };
 use tokio::{net::TcpListener, select};
+use tower_http::cors::{Any, CorsLayer};
 use tracing::info;
 
 #[tokio::main]
@@ -52,7 +54,6 @@ async fn main() -> Result<()> {
     let (role_querier, poller) = RoleQuerier::new().await?;
 
     let app = Router::new()
-        .route("/", get(|| async { "Hello, World!" }))
         .nest("/", router())
         .with_state(State {
             provider,
@@ -62,7 +63,14 @@ async fn main() -> Result<()> {
             pubkey_registry,
             anonymous_attestator,
             proxy_private_key,
-        });
+        })
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods([Method::POST])
+                .allow_headers([CONTENT_TYPE]),
+        )
+        .route("/", get(|| async { "Hello, World!" }));
 
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
