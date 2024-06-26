@@ -1,7 +1,6 @@
 import { EAS } from "@/constants/contracts"
 import {
   ArrowRight,
-  Badge,
   CircleUserRound,
   CornerRightDown,
   EyeOff,
@@ -13,6 +12,7 @@ import { ALL_ROLES } from "@/types/role"
 import { formatAddress } from "@/lib/address"
 import { useMainnetEnsName } from "@/hooks/useMainnetEnsName"
 
+import { Badge } from "../ui/badge"
 import { Card } from "../ui/card"
 
 export const AttestationCard = ({
