@@ -4,6 +4,7 @@ import _ from "lodash"
 import { Address, checksumAddress, decodeAbiParameters, Hex } from "viem"
 
 import { env } from "@/env.mjs"
+import { Attestation, FormattedAttestation } from "@/types/attestation"
 
 export const queryBadgeholders = async (forAddress?: Address) => {
   const formatted = forAddress ? checksumAddress(forAddress) : undefined
@@ -103,17 +104,7 @@ export const queryAttestations = async (
       },
     })
     .then((res) =>
-      _.chain(
-        res.data.data.schema.attestations as {
-          id: Hex
-          data: Hex
-          revocationTime: number
-          attester: Address
-          recipient: Address
-          time: number
-          txid: string
-        }[]
-      )
+      _.chain(res.data.data.schema.attestations as Attestation[])
         .map((a) => {
           try {
             const data = decodeAbiParameters(Abis.SCHEMA_ABI_PARAMETER, a.data)
@@ -125,7 +116,7 @@ export const queryAttestations = async (
                 message: data[2],
                 ref: data[3],
               },
-            }
+            } as FormattedAttestation
           } catch (e) {
             console.error(e)
             return undefined

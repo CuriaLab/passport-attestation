@@ -1,18 +1,13 @@
 "use client"
 
-import { useMemo } from "react"
-import { EAS } from "@/constants/contracts"
+import { useState } from "react"
 import { queryAttestations } from "@/services/eas"
-import { useInfiniteQuery } from "@tanstack/react-query"
+import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import _ from "lodash"
-import { ArrowRight, CircleUserRound, EyeOff } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useChainId } from "wagmi"
 
-import { ALL_ROLES } from "@/types/role"
-import { formatAddress } from "@/lib/address"
-import { getBlockExplorer } from "@/lib/chain"
-
-import { Badge } from "../ui/badge"
+import { Button } from "../ui/button"
 import {
   Card,
   CardContent,
@@ -21,31 +16,19 @@ import {
   CardTitle,
 } from "../ui/card"
 import { Skeleton } from "../ui/skeleton"
+import { AttestationCard } from "./attestation"
 
 export const AttestationListCard = () => {
   const chainId = useChainId()
-  const { data, isLoading } = useInfiniteQuery({
+
+  const [page, setPage] = useState(0)
+  const { data, isLoading } = useQuery({
     queryKey: ["attestations", chainId],
-    queryFn: async ({ pageParam = 0 }) => {
-      return queryAttestations(chainId, pageParam, 10)
+    queryFn: async () => {
+      return queryAttestations(chainId, page, 10)
     },
-    getNextPageParam: (_, __, i) => i + 1,
-    initialPageParam: 0,
+    placeholderData: keepPreviousData,
   })
-
-  const attestations = useMemo(
-    () => data?.pages?.flatMap((page) => page) ?? [],
-    [data]
-  )
-
-  const [blockExplorer, attestationExplorer, anonymousAttester] =
-    useMemo(() => {
-      return [
-        getBlockExplorer(chainId)!,
-        EAS[chainId].explorer,
-        EAS[chainId].anonymousAttester,
-      ] as const
-    }, [chainId])
 
   return (
     <Card className="mx-auto w-full flex-auto">
@@ -54,68 +37,37 @@ export const AttestationListCard = () => {
         <CardDescription>
           List of all the attestations on the platform
         </CardDescription>
+        <div className="flex items-center justify-end gap-2 *:size-8 *:p-2">
+          <Button
+            variant="outline"
+            disabled={page === 0 || isLoading}
+            onClick={() => setPage((p) => p - 1)}
+            aria-label="Previous page"
+          >
+            <ChevronLeft className="size-4" />
+          </Button>
+          <Button
+            variant="outline"
+            disabled={(data && data?.length < 10) || isLoading}
+            onClick={() => setPage((p) => p + 1)}
+            aria-label="Next page"
+          >
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 gap-2">
-          {isLoading &&
-            _.range(5).map((i) => <Skeleton key={i} className="h-24 w-full" />)}
-          {attestations.map(function (attestation) {
-            const isAnonymous = attestation.attester === anonymousAttester
-            return (
-              <Card
-                key={attestation.id}
-                className="flex w-full flex-col gap-1 p-4"
-              >
-                <p className="line-clamp-2 font-semibold">
-                  {attestation.data.title}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {attestation.data.message}
-                </p>
-                <a
-                  className="line-clamp-1 text-sm font-medium"
-                  href={`${attestationExplorer}/attestation/view/${attestation.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {attestation.id.slice(0, 40)}
-                </a>
-                <div className="flex items-center gap-2 text-sm">
-                  {isAnonymous ? (
-                    <>
-                      <EyeOff className="size-4" />
-                      <span className="font-medium">Anonymous</span>
-                    </>
-                  ) : (
-                    <>
-                      <CircleUserRound className="size-4" />
-                      <a
-                        className="font-medium"
-                        href={`${attestationExplorer}/address/${attestation.attester}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {formatAddress(attestation.attester)}
-                      </a>
-                    </>
-                  )}
-                  <Badge className="px-1 py-0 text-xs">
-                    {ALL_ROLES[attestation.data.role]}
-                  </Badge>
-                  <ArrowRight className="mx-2 size-4" />
-                  <CircleUserRound className="size-4" />
-                  <a
-                    className="font-medium"
-                    href={`${attestationExplorer}/address/${attestation.attester}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {formatAddress(attestation.recipient)}
-                  </a>
-                </div>
-              </Card>
-            )
-          })}
+          {isLoading
+            ? _.range(5).map((i) => (
+                <Skeleton key={i} className="h-24 w-full" />
+              ))
+            : data?.map((attestation) => (
+                <AttestationCard
+                  key={attestation.id}
+                  attestation={attestation}
+                />
+              ))}
         </div>
       </CardContent>
     </Card>
