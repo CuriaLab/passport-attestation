@@ -29,6 +29,11 @@ export const getConfig = () => {
 export const ethereumClient = createPublicClient({
   transport: http("https://1rpc.io/eth"),
   chain: mainnet,
+  batch: {
+    multicall: {
+      wait: 200,
+    },
+  },
 })
 
 declare module "wagmi" {
