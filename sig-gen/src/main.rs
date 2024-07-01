@@ -35,6 +35,14 @@ async fn main() -> Result<()> {
         .ok()
         .map(|url| Some(ProviderBuilder::new().on_http(Url::parse(&url).ok()?)))
         .flatten();
+    let testnet_anonymous_attestator = var("TESTNET_ANONYMOUS_ATTESTOR")
+        .ok()
+        .map(|addr| Address::from_hex(&addr).ok())
+        .flatten();
+    let testnet_pubkey_registry = var("TESTNET_KEY_REGISTRY")
+        .ok()
+        .map(|addr| Address::from_hex(&addr).ok())
+        .flatten();
     let private_key = EdFr::from_be_bytes_mod_order(&hex::decode(&var("PRIVATE_KEY")?)?);
     let public_key = (EdAffine::generator() * private_key).into_affine();
     let pubkey_registry = Address::from_hex(&var("PUBKEY_REGISTRY")?)?;
@@ -64,6 +72,8 @@ async fn main() -> Result<()> {
             pubkey_registry,
             anonymous_attestator,
             proxy_private_key,
+            testnet_pubkey_registry,
+            testnet_anonymous_attestator,
         })
         .layer(
             CorsLayer::new()

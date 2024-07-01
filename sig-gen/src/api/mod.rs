@@ -4,7 +4,7 @@ use alloy::{
     primitives::FixedBytes,
     providers::{
         network::{EthereumWallet, TransactionBuilder},
-        Provider, ProviderBuilder, WalletProvider,
+        Provider, ProviderBuilder,
     },
     rpc::types::TransactionRequest,
     signers::local::PrivateKeySigner,
@@ -46,6 +46,13 @@ pub async fn proxy(
         )
     })?;
 
+    let anonymous_attestator = state.anonymous_attestator(is_testnet).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "message": format!("Failed to get anonymous attestator: {}", e) })),
+        )
+    })?;
+
     let tx_hash = async {
         let provider = ProviderBuilder::new()
             .with_recommended_fillers()
@@ -54,7 +61,7 @@ pub async fn proxy(
             )?))
             .on_provider(provider);
         let tx_request = TransactionRequest::default()
-            .to(state.anonymous_attestator)
+            .to(anonymous_attestator)
             .with_input(input);
         let tx_hash = *provider.send_transaction(tx_request).await?.tx_hash();
         anyhow::Ok(tx_hash)
