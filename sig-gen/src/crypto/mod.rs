@@ -75,16 +75,28 @@ pub fn ecdsa_recover(
     sig_s: ark_secp256k1::Fr,
     sig_v: u8,
 ) -> Result<ark_secp256k1::Affine> {
-    let sig_v = match sig_v {
-        27 | 0 => 0,
-        28 | 1 => 1,
+    let is_even = match sig_v {
+        27 | 0 => true,
+        28 | 1 => false,
         _ => bail!("Invalid sig_v value"),
     };
-    let y = ark_secp256k1::Affine::get_point_from_x_unchecked(
-        convert::<ark_secp256k1::Fq>(&sig_r),
-        sig_v == 1,
-    )
-    .ok_or(anyhow!("Invalid r or v, cannot recover r point"))?;
+    let y = {
+        let gen = |b: bool| {
+            ark_secp256k1::Affine::get_point_from_x_unchecked(
+                convert::<ark_secp256k1::Fq>(&sig_r),
+                b,
+            )
+            .ok_or(anyhow!("Invalid r or v, cannot recover r point"))
+        };
+
+        let y = gen(true)?;
+        if y.y.into_bigint().is_even() && is_even {
+            y
+        } else {
+            gen(false)?
+        }
+    };
+
     let hashed_message = keccak256(
         [
             b"\x19Ethereum Signed Message:\n",
