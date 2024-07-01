@@ -15,7 +15,7 @@ RUN cargo build --release --bin sig-gen
 
 # We do not need the Rust toolchain to run the binary!
 FROM debian:bookworm-slim AS runtime
-RUN apt update && apt install -y libsasl2-dev libsasl2-2 openssl
+RUN apt update && apt install -y libsasl2-dev libsasl2-2 openssl ca-certificates
 WORKDIR /app
 COPY --from=builder /app/target/release/sig-gen /usr/local/bin
 ENV PORT=3010
