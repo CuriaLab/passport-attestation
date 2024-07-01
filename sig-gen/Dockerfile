@@ -11,12 +11,12 @@ COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 # Build application
 COPY . .
-RUN cargo build --release
+RUN cargo build --release --bin sig-gen
 
 # We do not need the Rust toolchain to run the binary!
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
-COPY --from=builder /app/target/release/sig_gen /usr/local/bin
+COPY --from=builder /app/target/release/sig-gen /usr/local/bin
 ENV PORT=3010
 EXPOSE $PORT
 ENTRYPOINT ["/usr/local/bin/sig_gen"]
