@@ -6,6 +6,6 @@
 
 - Deployer address: [0x0C0876A655633Ac82642178E73287608D9d29FCC](https://sepolia-optimism.etherscan.io/address/0x0C0876A655633Ac82642178E73287608D9d29FCC)
 - KeyRegistry address: [0xC199828d999c55e49f0DB2727b4fCAe2913901e3](https://sepolia-optimism.etherscan.io/address/0xC199828d999c55e49f0DB2727b4fCAe2913901e3)
-- Schema ID: [0xe947c758ac9ae50b478c9bb5ca18fba17d7fbd8cb2953753777ebfcc41aa1412](https://optimism-sepolia.easscan.org/schema/view/0xe947c758ac9ae50b478c9bb5ca18fba17d7fbd8cb2953753777ebfcc41aa1412)
-- AttestationResolver address: [0x916f3443106F6FfBf34Bf7A105cc878450eCFc92](https://sepolia-optimism.etherscan.io/address/0xe947c758ac9ae50b478c9bb5ca18fba17d7fbd8cb2953753777ebfcc41aa1412)
-- AnonymousAttester address: [0x7e7E8137117b6B6a02BC90713FA0cC72CF838bDb](https://sepolia-optimism.etherscan.io/address/0xe947c758ac9ae50b478c9bb5ca18fba17d7fbd8cb2953753777ebfcc41aa1412)
+- Schema ID: [0x68fc8c17b92b7c85f397c9cadbf26c31d0299a0bb459339a0ee6546c2107352a](https://optimism-sepolia.easscan.org/schema/view/0x68fc8c17b92b7c85f397c9cadbf26c31d0299a0bb459339a0ee6546c2107352a)
+- AttestationResolver address: [0x3De5A5c044aE546813E92218379853E5abaA0611](https://sepolia-optimism.etherscan.io/address/0x3De5A5c044aE546813E92218379853E5abaA0611)
+- AnonymousAttester address: [0x789CC626C6f2157a23649B71a26f13BeB45CfEBb](https://sepolia-optimism.etherscan.io/address/0x789CC626C6f2157a23649B71a26f13BeB45CfEBb)
