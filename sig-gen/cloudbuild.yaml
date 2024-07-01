@@ -6,7 +6,7 @@ steps:
         "build",
         "-t",
         "gcr.io/$PROJECT_ID/oppassport-attestation-api:$COMMIT_SHA",
-        ".",
+        "./sig-gen",
       ]
   - name: "gcr.io/cloud-builders/docker"
     args: ["push", "gcr.io/$PROJECT_ID/oppassport-attestation-api:$COMMIT_SHA"]
