@@ -1,7 +1,7 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit"
 import { createPublicClient } from "viem"
 import { mainnet, optimism, optimismSepolia } from "viem/chains"
-import { cookieStorage, createConfig, createStorage, http } from "wagmi"
+import { cookieStorage, createStorage, http } from "wagmi"
 
 import { env } from "@/env.mjs"
 

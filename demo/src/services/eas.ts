@@ -60,7 +60,7 @@ export const queryBadgeholders = async (forAddress?: Address) => {
             id: a.id,
           }
         })
-        .filter((a) => a.round === env.NEXT_PUBLIC_BADGEHOLDER_ROUND)
+        .filter((a) => a.round === env.badgeholderRound)
       return refIDs[0]?.id
     })
 }

@@ -1,5 +1,7 @@
-import { parseAbi, parseAbiParameters, zeroAddress, zeroHash } from "viem"
+import { Address, Hex, parseAbi, parseAbiParameters } from "viem"
 import { optimism, optimismSepolia } from "viem/chains"
+
+import { env } from "@/env.mjs"
 
 export namespace Addresses {
   export const EAS = "0x4200000000000000000000000000000000000021"
@@ -36,21 +38,20 @@ export const BADGEHOLDER_SCHEMA_ID =
 
 export const EAS = {
   [optimism.id]: {
-    schema: zeroHash,
+    schema: env.NEXT_PUBLIC_SCHEMA_ID as Hex,
     graphql: "https://optimism.easscan.org/graphql",
     explorer: "https://optimism.easscan.org",
-    anonymousAttester: zeroAddress,
+    anonymousAttester: env.NEXT_PUBLIC_ANONYMOUS_ATTESTER as Address,
   },
   [optimismSepolia.id]: {
-    schema:
-      "0xe947c758ac9ae50b478c9bb5ca18fba17d7fbd8cb2953753777ebfcc41aa1412",
+    schema: env.NEXT_PUBLIC_TESTNET_SCHEMA_ID as Hex,
     graphql: "https://optimism-sepolia.easscan.org/graphql",
     explorer: "https://optimism-sepolia.easscan.org",
-    anonymousAttester: "0x2e313Bc0b6AFB447FB439F784F92A933C15eB277",
+    anonymousAttester: env.NEXT_PUBLIC_TESTNET_ANONYMOUS_ATTESTER as Address,
   },
 } as const
 
 export const PUBLIC_KEY = {
-  x: "0x176f151b4a9643d5dbc1023c2f17ea2249aee6205f158bfa7d897997bc70fef7",
-  y: "0x10b85b3f732ab327178b7af4e4ef70f67dcfe0adbd8fa2e38fb7d632d2addea5",
+  x: env.NEXT_PUBLIC_CURIA_PUBLIC_KEY.x,
+  y: env.NEXT_PUBLIC_CURIA_PUBLIC_KEY.y,
 }
