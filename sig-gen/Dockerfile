@@ -19,4 +19,4 @@ WORKDIR /app
 COPY --from=builder /app/target/release/sig-gen /usr/local/bin
 ENV PORT=3010
 EXPOSE $PORT
-ENTRYPOINT ["/usr/local/bin/sig_gen"]
+ENTRYPOINT ["/usr/local/bin/sig-gen"]
