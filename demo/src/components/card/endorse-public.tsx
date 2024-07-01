@@ -14,7 +14,6 @@ import {
   encodeFunctionData,
   zeroHash,
 } from "viem"
-import { optimism } from "viem/chains"
 import { useAccount, useChainId, usePublicClient, useWalletClient } from "wagmi"
 import { z } from "zod"
 
@@ -196,7 +195,7 @@ export const EndorsePublicCard = () => {
 
         const hash = await proxyAnonymousAttestation(
           calldata,
-          chainId !== optimism.id
+          true
         )
 
         tx = await client.waitForTransactionReceipt({
