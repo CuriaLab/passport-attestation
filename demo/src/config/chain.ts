@@ -14,7 +14,18 @@ export const getConfig = () => {
     appName: siteConfig.name,
     projectId: env.NEXT_PUBLIC_WC_PROJECT_ID,
     //chains: [optimism, optimismSepolia],
-    chains: [optimismSepolia],
+    chains: [
+      {
+        ...optimismSepolia,
+        blockExplorers: {
+          default: {
+            name: "Etherscan",
+            url: "https://sepolia-optimism.etherscan.io",
+            apiUrl: "https://api-sepolia-optimism.etherscan.io/api",
+          },
+        },
+      },
+    ],
     ssr: true,
     storage: createStorage({
       storage: cookieStorage,

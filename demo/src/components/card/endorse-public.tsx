@@ -5,9 +5,11 @@ import { Abis, Addresses, EAS } from "@/constants/contracts"
 import { getCuriaSignature, proxyAnonymousAttestation } from "@/services/curia"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useQueryClient } from "@tanstack/react-query"
+import axios from "axios"
 import { cx } from "class-variance-authority"
 import _ from "lodash"
 import { useForm } from "react-hook-form"
+import { toast } from "sonner"
 import {
   Address,
   encodeAbiParameters,
@@ -45,8 +47,6 @@ import { Input } from "../ui/input"
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group"
 import { Switch } from "../ui/switch"
 import { Textarea } from "../ui/textarea"
-import { ToastAction } from "../ui/toast"
-import { useToast } from "../ui/use-toast"
 
 const AnonymousEnabledSchema = z.object({
   enabled: z.literal(true),
@@ -76,8 +76,6 @@ const FormSchema = z.object({
 })
 
 export const EndorsePublicCard = () => {
-  const { toast } = useToast()
-
   const account = useAccount()
   const client = usePublicClient()
   const walletClient = useWalletClient()
@@ -117,7 +115,7 @@ export const EndorsePublicCard = () => {
         return
       }
 
-      let tx
+      let hash
       if (data.anonymous.enabled) {
         if (!account.address) return
         if (!data.anonymous.password) return
@@ -144,6 +142,10 @@ export const EndorsePublicCard = () => {
           )
         }
 
+        const zkToastId = toast.loading("Generating ZK Proof", {
+          description: "This may take a while. Please wait...",
+        })
+
         // generate zk proof
         const { proof, nonce, revokerHash, timestamp } = await prove(
           account.address,
@@ -152,6 +154,8 @@ export const EndorsePublicCard = () => {
           curiaSignature.timestamp,
           data.anonymous.password
         )
+
+        toast.dismiss(zkToastId)
 
         const schema = EAS[chainId].schema
 
@@ -176,33 +180,9 @@ export const EndorsePublicCard = () => {
           ],
         })
 
-        console.log([
-          schema,
-          recipient as Address,
-          {
-            ref: zeroHash,
-            message: data.message,
-            title: data.title,
-            role: BigInt(signatureForThisRole.role),
-          },
-          {
-            proof,
-            nonce,
-            revokerHash,
-            timestamp,
-          },
-        ])
-
-        const hash = await proxyAnonymousAttestation(
-          calldata,
-          true
-        )
-
-        tx = await client.waitForTransactionReceipt({
-          hash,
-        })
+        hash = await proxyAnonymousAttestation(calldata, true)
       } else {
-        const hash = await walletClient.data?.writeContract({
+        hash = await walletClient.data?.writeContract({
           abi: Abis.EAS_ABI,
           address: Addresses.EAS,
           functionName: "attest",
@@ -225,30 +205,36 @@ export const EndorsePublicCard = () => {
             },
           ],
         })
-
-        if (!hash) {
-          return
-        }
-
-        tx = await client.waitForTransactionReceipt({
-          hash,
-        })
       }
 
-      toast({
-        title: "Transaction Completed",
+      if (!hash) {
+        toast.error("Error", {
+          description: "Transaction failed",
+        })
+        return
+      }
+
+      const waitingToastId = toast.loading(
+        "Waiting for transaction to complete",
+        {
+          description: hash,
+        }
+      )
+
+      const tx = await client.waitForTransactionReceipt({
+        hash,
+      })
+
+      toast.dismiss(waitingToastId)
+
+      toast.success("Transaction Completed", {
         description: `Endorsement successful. Transaction hash: ${tx.transactionHash}`,
-        action: (
-          <ToastAction
-            altText="Show"
-            className="max-w-[60%]"
-            onClick={() => {
-              window.open(`${blockExplorer}/tx/${tx.transactionHash}`, "_blank")
-            }}
-          >
-            Show
-          </ToastAction>
-        ),
+        action: {
+          label: "Show",
+          onClick: () => {
+            window.open(`${blockExplorer}/tx/${tx.transactionHash}`, "_blank")
+          },
+        },
       })
 
       queryClient
@@ -256,7 +242,7 @@ export const EndorsePublicCard = () => {
           queryKey: ["attestations", chainId],
         })
         .then(async () => {
-          await new Promise((resolve) => setTimeout(resolve, 1500))
+          await new Promise((resolve) => setTimeout(resolve, 2000))
           await queryClient.prefetchQuery({
             queryKey: ["attestations", chainId],
           })
@@ -264,10 +250,14 @@ export const EndorsePublicCard = () => {
 
       form.reset()
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-      })
+      if (axios.isAxiosError(error))
+        toast.error("Error", {
+          description: error.response?.data.message || error.message,
+        })
+      else
+        toast.error("Error", {
+          description: error.message,
+        })
       throw error
     } finally {
       setSubmitting(false)

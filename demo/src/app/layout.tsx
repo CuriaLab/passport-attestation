@@ -9,6 +9,7 @@ import { cookieToInitialState } from "wagmi"
 
 import { siteConfig } from "@/config/site"
 import { cn } from "@/lib/utils"
+import { Toaster as SonnerToaster } from "@/components/ui/sonner"
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Providers } from "@/components/wagmi-provider"
@@ -92,6 +93,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           >
             {children}
             <Toaster />
+            <SonnerToaster />
           </ThemeProvider>
         </Providers>
       </body>
