@@ -107,14 +107,14 @@ export const AttestationCard = ({
         ])
         const revokerHash = poseidon2([revoker, revoker])
 
-        if (slot !== toHex(revokerHash)) {
+        if (slot !== pad(toHex(revokerHash))) {
           throw new Error("Invalid revoke password")
         }
 
         const calldata = encodeFunctionData({
           abi: Abis.ANNOYMOUS_ATTESTER_ABI,
           functionName: "revoke",
-          args: [eas.schema, attestation.id, toHex(revoker)],
+          args: [eas.schema, attestation.id, pad(toHex(revoker))],
         })
 
         hash = await proxyAnonymousAttestation(calldata, true)
