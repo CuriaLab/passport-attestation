@@ -134,12 +134,10 @@ pub async fn signature(
         ));
     }
 
-    let now_truncated_day = SystemTime::now()
+    let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
-        .as_secs()
-        / 86400
-        * 86400;
+        .as_secs();
 
     let signatures = ALL_ROLES
         .into_iter()
@@ -162,7 +160,7 @@ pub async fn signature(
             let identity = hash(&[
                 ark_ed_on_bn254::Fq::from_be_bytes_mod_order(address.as_ref()),
                 ark_ed_on_bn254::Fq::from(role_u8),
-                ark_ed_on_bn254::Fq::from(now_truncated_day),
+                ark_ed_on_bn254::Fq::from(now),
                 random_nonce
             ])?;
             let signature = eddsa_sign(state.private_key, identity)?;
@@ -186,6 +184,6 @@ pub async fn signature(
 
     Ok(Json(json!({
         "signatures": signatures,
-        "timestamp": now_truncated_day,
+        "timestamp": now,
     })))
 }
