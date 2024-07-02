@@ -37,6 +37,7 @@ export const AttestationListCard = () => {
       if (lastPage.length < 10) return undefined
       return p + 1
     },
+    refetchOnWindowFocus: false,
   })
 
   return (
