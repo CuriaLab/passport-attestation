@@ -2,7 +2,11 @@
 
 import { useState } from "react"
 import { queryAttestations } from "@/services/eas"
-import { keepPreviousData, useQuery } from "@tanstack/react-query"
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useQuery,
+} from "@tanstack/react-query"
 import _ from "lodash"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useChainId } from "wagmi"
@@ -22,12 +26,17 @@ export const AttestationListCard = () => {
   const chainId = useChainId()
 
   const [page, setPage] = useState(0)
-  const { data, isLoading } = useQuery({
+  const { data, isFetching, hasNextPage, fetchNextPage } = useInfiniteQuery({
     queryKey: ["attestations", chainId],
-    queryFn: async () => {
-      return queryAttestations(chainId, page, 10)
+    queryFn: async ({ pageParam }) => {
+      return queryAttestations(chainId, pageParam, 10)
     },
     placeholderData: keepPreviousData,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, _, p) => {
+      if (lastPage.length < 10) return undefined
+      return p + 1
+    },
   })
 
   return (
@@ -40,7 +49,7 @@ export const AttestationListCard = () => {
         <div className="flex items-center justify-end gap-2 *:size-8 *:p-2">
           <Button
             variant="outline"
-            disabled={page === 0 || isLoading}
+            disabled={page === 0 || isFetching}
             onClick={() => setPage((p) => p - 1)}
             aria-label="Previous page"
           >
@@ -48,8 +57,15 @@ export const AttestationListCard = () => {
           </Button>
           <Button
             variant="outline"
-            disabled={(data && data?.length < 10) || isLoading}
-            onClick={() => setPage((p) => p + 1)}
+            disabled={
+              (data?.pages.length === page + 1 && !hasNextPage) || isFetching
+            }
+            onClick={async () => {
+              if (data?.pages.length && data.pages.length < page + 2) {
+                await fetchNextPage()
+              }
+              setPage((p) => p + 1)
+            }}
             aria-label="Next page"
           >
             <ChevronRight className="size-4" />
@@ -58,11 +74,11 @@ export const AttestationListCard = () => {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 gap-2">
-          {isLoading
+          {isFetching
             ? _.range(5).map((i) => (
                 <Skeleton key={i} className="h-24 w-full" />
               ))
-            : data?.map((attestation) => (
+            : data?.pages?.[page]?.map((attestation) => (
                 <AttestationCard
                   key={attestation.id}
                   attestation={attestation}
