@@ -23,13 +23,17 @@ export namespace Abis {
   export const EAS_ABI = parseAbi([
     "struct AttestationRequest { bytes32 schema; AttestationRequestData data; }",
     "struct AttestationRequestData { address recipient; uint64 expirationTime; bool revocable; bytes32 refUID; bytes data; uint256 value; }",
+    "struct RevocationRequestData { bytes32 uid; uint256 value; }",
+    "struct RevocationRequest { bytes32 schema; RevocationRequestData data; }",
     "function attest(AttestationRequest calldata request) external payable returns (bytes32)",
+    "function revoke(RevocationRequest calldata request) external",
   ])
   export const ANNOYMOUS_ATTESTER_ABI = parseAbi([
     "struct AttestationProof { bytes proof; bytes32 revokerHash; bytes32 nonce; bytes32 timestamp; }",
     "struct Schema { uint256 role; string title; string message; bytes ref; }",
     "function attest(bytes32 schema, address recipient, Schema calldata data, AttestationProof calldata proof) external returns (bytes32)",
     "function revoke(bytes32 schema, bytes32 uid, bytes32 revoker) external",
+    "function revokers(bytes32 uid) external view returns (bytes32 revoker)",
   ])
 }
 

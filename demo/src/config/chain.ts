@@ -34,6 +34,12 @@ export const getConfig = () => {
       [optimism.id]: http(),
       [optimismSepolia.id]: http(),
     },
+    batch: {
+      multicall: {
+        wait: 200,
+        batchSize: 2048,
+      },
+    },
   })
 }
 
@@ -43,6 +49,7 @@ export const ethereumClient = createPublicClient({
   batch: {
     multicall: {
       wait: 200,
+      batchSize: 2048,
     },
   },
 })

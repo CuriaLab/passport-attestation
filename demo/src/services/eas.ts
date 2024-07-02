@@ -85,6 +85,7 @@ export const queryAttestations = async (
                               recipient
                               time
                               txid
+                              revoked
                             }
                           }
                         }

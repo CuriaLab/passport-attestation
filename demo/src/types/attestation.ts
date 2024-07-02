@@ -8,6 +8,7 @@ export type Attestation = {
   recipient: Address
   time: number
   txid: string
+  revoked: boolean
 }
 
 export type FormattedAttestation = Omit<Attestation, "data"> & {
