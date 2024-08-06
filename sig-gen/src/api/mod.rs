@@ -1,13 +1,13 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use alloy::{
-    primitives::FixedBytes,
+    primitives::{FixedBytes, U256},
     providers::{
         network::{EthereumWallet, TransactionBuilder},
         Provider, ProviderBuilder,
     },
     rpc::types::TransactionRequest,
-    signers::local::PrivateKeySigner,
+    signers::{k256::ecdsa::RecoveryId, local::PrivateKeySigner, Signature as AlloySignature},
 };
 use anyhow::Result;
 use ark_ff::{BigInteger, PrimeField, UniformRand};
@@ -22,7 +22,7 @@ use hyper::StatusCode;
 use serde_json::{json, Value};
 
 use crate::{
-    crypto::{ecdsa_recover, eddsa_sign, eddsa_verify_message, hash, pubkey_to_address, EdAffine},
+    crypto::{eddsa_sign, eddsa_verify_message, hash, EdAffine},
     query::ALL_ROLES,
 };
 
@@ -86,15 +86,30 @@ pub async fn signature(
 
     if !match signature {
         Signature::ECDSA { r, s, v } => {
-            let r = ark_secp256k1::Fr::from_be_bytes_mod_order(&r);
-            let s = ark_secp256k1::Fr::from_be_bytes_mod_order(&s);
-            let pubkey_recovered = ecdsa_recover(message.as_bytes(), r, s, v).map_err(|e| {
+            let address_recovered = AlloySignature::from_rs_and_parity(
+                U256::from_be_slice(&r),
+                U256::from_be_slice(&s),
+                RecoveryId::from_byte(v - 27).ok_or_else(|| {
+                    (
+                        StatusCode::BAD_REQUEST,
+                        Json(json!({ "message": "Invalid v, recovery id" })),
+                    )
+                })?,
+            )
+            .map_err(|e| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({ "message": format!("Malformed ECDSA Signature: {}", e) })),
+                )
+            })?
+            .recover_address_from_msg(&message)
+            .map_err(|e| {
                 (
                     StatusCode::BAD_REQUEST,
                     Json(json!({ "message": format!("Invalid ECDSA Signature: {}", e) })),
                 )
             })?;
-            let address_recovered = pubkey_to_address(pubkey_recovered);
+
             address_recovered == address
         }
         Signature::EDDSA { r, s } => {
