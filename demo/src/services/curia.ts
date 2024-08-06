@@ -31,13 +31,9 @@ export const getCuriaSignature = async (
   }
 }
 
-export const proxyAnonymousAttestation = async (
-  callData: Hex,
-  isTestnet: boolean
-) => {
+export const proxyAnonymousAttestation = async (callData: Hex) => {
   const response = await axios.post(`${env.NEXT_PUBLIC_CURIA_API_URL}/proxy`, {
     input: callData,
-    is_testnet: isTestnet,
   })
   return response.data.tx_hash as Hex
 }

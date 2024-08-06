@@ -180,7 +180,7 @@ export const EndorsePublicCard = () => {
           ],
         })
 
-        hash = await proxyAnonymousAttestation(calldata, true)
+        hash = await proxyAnonymousAttestation(calldata)
       } else {
         hash = await walletClient.data?.writeContract({
           abi: Abis.EAS_ABI,
