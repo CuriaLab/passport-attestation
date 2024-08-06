@@ -117,7 +117,7 @@ export const AttestationCard = ({
           args: [eas.schema, attestation.id, pad(toHex(revoker))],
         })
 
-        hash = await proxyAnonymousAttestation(calldata, true)
+        hash = await proxyAnonymousAttestation(calldata)
       } else {
         // revoke attestation
         hash = await walletClient.data?.writeContract({
