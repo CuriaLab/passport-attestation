@@ -12,6 +12,14 @@
 
 ## Deployed Contracts
 
+### OP Mainnet
+
+- Deployer address: [0x1729F83D38828953202A7C1e53b84F8d1f56b879](https://optimism.etherscan.io/address/0x1729F83D38828953202A7C1e53b84F8d1f56b879)
+- KeyRegistry address: [0xed044ccB96B6c72638537365c5fF67C36892E970](https://optimism.etherscan.io/address/0xed044ccB96B6c72638537365c5fF67C36892E970)
+- Schema ID: [0x298883c389b260cf2226b0511a357966e584852a580d58adc8f529bc84d5050a](https://optimism.easscan.org/schema/view/0x298883c389b260cf2226b0511a357966e584852a580d58adc8f529bc84d5050a)
+- AttestationResolver address: [0x9D4853AB5454b751C0f86e3a9B1CE8768C3793A1](https://optimistic.etherscan.io/address/0x9D4853AB5454b751C0f86e3a9B1CE8768C3793A1)
+- AnonymousAttester address: [0xBCfA04883f6E55355a44Be12B020B35286314EC2](https://optimism.etherscan.io/address/0xBCfA04883f6E55355a44Be12B020B35286314EC2)
+
 ### OP Sepolia
 
 - Deployer address: [0x0C0876A655633Ac82642178E73287608D9d29FCC](https://sepolia-optimism.etherscan.io/address/0x0C0876A655633Ac82642178E73287608D9d29FCC)
@@ -19,3 +27,4 @@
 - Schema ID: [0x68fc8c17b92b7c85f397c9cadbf26c31d0299a0bb459339a0ee6546c2107352a](https://optimism-sepolia.easscan.org/schema/view/0x68fc8c17b92b7c85f397c9cadbf26c31d0299a0bb459339a0ee6546c2107352a)
 - AttestationResolver address: [0x3De5A5c044aE546813E92218379853E5abaA0611](https://sepolia-optimism.etherscan.io/address/0x3De5A5c044aE546813E92218379853E5abaA0611)
 - AnonymousAttester address: [0x789CC626C6f2157a23649B71a26f13BeB45CfEBb](https://sepolia-optimism.etherscan.io/address/0x789CC626C6f2157a23649B71a26f13BeB45CfEBb)
+
